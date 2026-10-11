@@ -5,6 +5,10 @@ acme-support:
     settings: Settings
     auto_close_days: Auto-close after (days)
     email_notifications: Email Notifications
+    permissions:
+      view_all: View all support tickets
+      reply: Reply to support tickets
+      manage: Manage support tickets
   forum:
     nav_item: Support
     title: Support Tickets

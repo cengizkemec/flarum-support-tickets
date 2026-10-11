@@ -5,6 +5,10 @@ acme-support:
     settings: Ayarlar
     auto_close_days: Otomatik kapatma (gün)
     email_notifications: E-posta Bildirimleri
+    permissions:
+      view_all: Tüm destek biletlerini gör
+      reply: Destek biletlerine yanıt ver
+      manage: Destek biletlerini yönet
   forum:
     nav_item: Destek
     title: Destek Biletleri

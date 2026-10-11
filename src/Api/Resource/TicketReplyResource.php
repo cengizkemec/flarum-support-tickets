@@ -7,7 +7,6 @@ use Tobyz\JsonApiServer\Context;
 use Flarum\Api\Endpoint;
 use Flarum\Api\Resource\AbstractDatabaseResource;
 use Flarum\Api\Schema;
-use Illuminate\Database\Eloquent\Builder;
 
 class TicketReplyResource extends AbstractDatabaseResource
 {
@@ -21,7 +20,7 @@ class TicketReplyResource extends AbstractDatabaseResource
         return TicketReply::class;
     }
 
-    public function scope(Builder $query, Context $context): void
+    public function scope(object $query, Context $context): void
     {
         // Visibility handled via ticket policy
     }
@@ -47,9 +46,12 @@ class TicketReplyResource extends AbstractDatabaseResource
         ];
     }
 
-    public function creating(TicketReply $reply, Context $context): void
+    public function creating(object $model, Context $context): ?object
     {
-        $reply->user_id = $context->getActor()->id;
-        $reply->is_staff = $context->getActor()->can('support.viewAll');
+        /** @var TicketReply $model */
+        $model->user_id = $context->getActor()->id;
+        $model->is_staff = $context->getActor()->can('support.viewAll');
+
+        return parent::creating($model, $context);
     }
 }

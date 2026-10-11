@@ -1,6 +1,6 @@
 import Extend from 'flarum/common/extenders';
 import app from 'flarum/admin/app';
-import SettingsPage from './components/SettingsPage';
+import SettingsPage from './components/SettingsPage.tsx';
 
 export default [
   new Extend.Admin()

@@ -7,7 +7,6 @@ use Tobyz\JsonApiServer\Context;
 use Flarum\Api\Endpoint;
 use Flarum\Api\Resource\AbstractDatabaseResource;
 use Flarum\Api\Schema;
-use Illuminate\Database\Eloquent\Builder;
 
 class TicketResource extends AbstractDatabaseResource
 {
@@ -21,7 +20,7 @@ class TicketResource extends AbstractDatabaseResource
         return Ticket::class;
     }
 
-    public function scope(Builder $query, Context $context): void
+    public function scope(object $query, Context $context): void
     {
         $actor = $context->getActor();
         if (!$actor->can('support.viewAll')) {

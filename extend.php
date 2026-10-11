@@ -10,7 +10,6 @@ use Acme\SupportTickets\Model\Ticket;
 use Acme\SupportTickets\Notification\NewTicketBlueprint;
 use Acme\SupportTickets\Notification\TicketReplyBlueprint;
 use Flarum\Extend;
-use Flarum\Group\Group;
 
 return [
     (new Extend\Frontend('forum'))
@@ -47,9 +46,4 @@ return [
         ->serializeToForum('supportAutoCloseDays', 'acme-support.auto_close_days', 14)
         ->default('acme-support.auto_close_days', 14)
         ->default('acme-support.email_notifications', true),
-
-    (new Extend\Permissions())
-        ->permission('support.viewAll', Group::MODERATOR_ID)
-        ->permission('support.reply', Group::MEMBER_ID)
-        ->permission('support.manage', Group::ADMINISTRATOR_ID),
 ];

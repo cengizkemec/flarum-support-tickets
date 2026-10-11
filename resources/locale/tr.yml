@@ -29,3 +29,9 @@ acme-support:
     reply: Yanıtla
     assigned_to: Atanan
     no_tickets: Henüz biletiniz yok.
+  email:
+    new_ticket_subject: "Yeni destek bileti: {subject}"
+    reply_subject: "Yeni yanıt: {subject}"
+  notification:
+    new_ticket: "Yeni destek bileti oluşturuldu"
+    ticket_reply: "Biletinize yeni yanıt geldi"

@@ -11,9 +11,11 @@ export default class CreateTicketModal extends Modal {
     this.message = Stream('');
     this.priority = Stream('medium');
     this.categoryId = Stream('');
-    this.attachment = Stream('');
+    this.attachmentUrl = Stream('');
+    this.attachmentName = Stream('');
     this.categories = [];
     this.loading = false;
+    this.uploading = false;
 
     app.store.find('ticket-categories').then((cats) => {
       this.categories = cats;
@@ -65,8 +67,9 @@ export default class CreateTicketModal extends Modal {
 
           <div className="Form-group">
             <label>{app.translator.trans('acme-support.forum.attachment')}</label>
-            <input type="file" className="FormControl" onchange={(e: any) => this.handleFile(e)} />
-            <small>File upload is prepared — integrate with Flarum filesystem or fof/upload for full support.</small>
+            <input type="file" className="FormControl" onchange={this.uploadFile.bind(this)} disabled={this.uploading} />
+            {this.uploading && <span>Uploading...</span>}
+            {this.attachmentName() && <div>Uploaded: {this.attachmentName()}</div>}
           </div>
 
           <div className="Form-group">
@@ -79,11 +82,31 @@ export default class CreateTicketModal extends Modal {
     );
   }
 
-  handleFile(e: any) {
+  async uploadFile(e: any) {
     const file = e.target.files[0];
-    if (file) {
-      // Placeholder: in production convert to base64 or upload via API
-      this.attachment(file.name);
+    if (!file) return;
+
+    this.uploading = true;
+    m.redraw();
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const response = await app.request({
+        method: 'POST',
+        url: app.forum.attribute('apiUrl') + '/support/upload',
+        body: formData,
+        // Let browser set Content-Type for multipart
+      });
+
+      this.attachmentUrl(response.url);
+      this.attachmentName(response.filename || file.name);
+    } catch (err) {
+      app.alerts.show({ type: 'error' }, 'Upload failed');
+    } finally {
+      this.uploading = false;
+      m.redraw();
     }
   }
 
@@ -98,14 +121,14 @@ export default class CreateTicketModal extends Modal {
         status: 'new',
       };
 
+      if (this.attachmentUrl()) {
+        data.attachment = this.attachmentUrl();
+      }
+
       if (this.categoryId()) {
         data.relationships = {
           category: app.store.getById('ticket-categories', this.categoryId()),
         };
-      }
-
-      if (this.attachment()) {
-        data.attachment = this.attachment();
       }
 
       const ticket = await app.store.createRecord('tickets').save(data);

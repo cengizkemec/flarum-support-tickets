@@ -29,3 +29,9 @@ acme-support:
     reply: Reply
     assigned_to: Assigned to
     no_tickets: You have no tickets yet.
+  email:
+    new_ticket_subject: "New support ticket: {subject}"
+    reply_subject: "New reply on: {subject}"
+  notification:
+    new_ticket: "New support ticket created"
+    ticket_reply: "New reply on your ticket"

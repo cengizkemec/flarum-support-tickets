@@ -1,0 +1,26 @@
+{
+  "name": "acme/support-tickets",
+  "description": "HESK-style Support Ticket System for Flarum 2.0",
+  "type": "flarum-extension",
+  "license": "MIT",
+  "require": {
+    "flarum/core": "^2.0",
+    "php": "^8.3"
+  },
+  "autoload": {
+    "psr-4": {
+      "Acme\\SupportTickets\\": "src/"
+    }
+  },
+  "extra": {
+    "flarum-extension": {
+      "title": "Support Tickets",
+      "category": "feature",
+      "icon": {
+        "name": "fas fa-headset",
+        "backgroundColor": "#1d4ed8",
+        "color": "#fff"
+      }
+    }
+  }
+}

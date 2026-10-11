@@ -1,0 +1,31 @@
+acme-support:
+  admin:
+    title: Support Tickets
+    categories: Categories
+    settings: Settings
+    auto_close_days: Auto-close after (days)
+    email_notifications: Email Notifications
+  forum:
+    nav_item: Support
+    title: Support Tickets
+    new_ticket: New Ticket
+    my_tickets: My Tickets
+    status:
+      new: New
+      answered: Answered
+      pending: Pending
+      resolved: Resolved
+      closed: Closed
+    priority:
+      low: Low
+      medium: Medium
+      high: High
+      critical: Critical
+    category: Category
+    subject: Subject
+    message: Message
+    attachment: Attachment
+    create: Create Ticket
+    reply: Reply
+    assigned_to: Assigned to
+    no_tickets: You have no tickets yet.

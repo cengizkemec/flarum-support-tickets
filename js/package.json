@@ -1,0 +1,16 @@
+{
+  "private": true,
+  "name": "@acme/support-tickets",
+  "dependencies": {
+    "flarum-webpack-config": "^3.0.0",
+    "webpack": "^5.0.0",
+    "webpack-cli": "^5.0.0"
+  },
+  "devDependencies": {
+    "flarum-tsconfig": "^2.0.0"
+  },
+  "scripts": {
+    "dev": "webpack --mode development --watch",
+    "build": "webpack --mode production"
+  }
+}

@@ -33,6 +33,7 @@ export default class TicketPage extends Page {
     }
 
     const ticket = this.ticket;
+    const isStaff = app.session.user?.can?.('support.viewAll');
 
     return (
       <PageStructure className="TicketPage" hero={() => <h2>{ticket.subject()}</h2>}>
@@ -40,11 +41,14 @@ export default class TicketPage extends Page {
           <span className={`TicketStatus TicketStatus--${ticket.status()}`}>
             {app.translator.trans(`acme-support.forum.status.${ticket.status()}`)}
           </span>
-          <span>{ticket.priority()}</span>
+          <span className="TicketPriority">{ticket.priority()}</span>
+          {ticket.category() && <span> | {ticket.category().name()}</span>}
+          {ticket.assignee() && <span> | Assigned: {ticket.assignee().displayName()}</span>}
         </div>
 
         <div className="Post">
           <div className="Post-body">{ticket.message()}</div>
+          {ticket.attachment() && <div className="TicketAttachment">Attachment: {ticket.attachment()}</div>}
         </div>
 
         <div className="TicketReplies">
@@ -70,6 +74,26 @@ export default class TicketPage extends Page {
           <Button className="Button Button--primary" onclick={this.submitReply.bind(this)}>
             {app.translator.trans('acme-support.forum.reply')}
           </Button>
+
+          {isStaff && (
+            <div className="TicketStaffActions">
+              <label>Status</label>
+              <select className="FormControl" value={ticket.status()} onchange={(e: any) => this.updateStatus(e.target.value)}>
+                <option value="new">New</option>
+                <option value="answered">Answered</option>
+                <option value="pending">Pending</option>
+                <option value="resolved">Resolved</option>
+                <option value="closed">Closed</option>
+              </select>
+
+              <label>Assign to (user ID)</label>
+              <input
+                className="FormControl"
+                placeholder="User ID"
+                onchange={(e: any) => this.assignTo(e.target.value)}
+              />
+            </div>
+          )}
         </div>
       </PageStructure>
     );
@@ -86,6 +110,23 @@ export default class TicketPage extends Page {
     });
 
     this.replyMessage('');
+    // Refresh replies
+    await app.store.find('tickets', this.ticket.id(), { include: 'replies,replies.user' });
+    m.redraw();
+  }
+
+  async updateStatus(status: string) {
+    await this.ticket.save({ status });
+    m.redraw();
+  }
+
+  async assignTo(userId: string) {
+    if (!userId) return;
+    await this.ticket.save({
+      relationships: {
+        assignee: app.store.getById('users', userId),
+      },
+    });
     m.redraw();
   }
 }

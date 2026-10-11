@@ -1,0 +1,32 @@
+<?php
+
+namespace Acme\SupportTickets\Access;
+
+use Acme\SupportTickets\Model\Ticket;
+use Flarum\User\Access\AbstractPolicy;
+use Flarum\User\User;
+
+class TicketPolicy extends AbstractPolicy
+{
+    protected $model = Ticket::class;
+
+    public function view(User $actor, Ticket $ticket): bool
+    {
+        return $actor->id === $ticket->user_id || $actor->can('support.viewAll');
+    }
+
+    public function reply(User $actor, Ticket $ticket): bool
+    {
+        return $this->view($actor, $ticket);
+    }
+
+    public function update(User $actor, Ticket $ticket): bool
+    {
+        return $actor->can('support.viewAll') || $actor->id === $ticket->user_id;
+    }
+
+    public function delete(User $actor, Ticket $ticket): bool
+    {
+        return $actor->can('support.manage');
+    }
+}

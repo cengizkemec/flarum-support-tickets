@@ -18,7 +18,7 @@ Full-featured support ticket system for Flarum 2.0 (cengizkemec/support-tickets)
 ## Installation
 
 ```bash
-composer require cengizkemec/support-tickets:*@dev
+composer require cengizkemec/support-tickets
 php flarum migrate
 php flarum cache:clear
 ```

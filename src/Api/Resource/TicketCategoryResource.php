@@ -1,9 +1,9 @@
 <?php
 
-namespace Acme\SupportTickets\Api\Resource;
+namespace Cengizkemec\SupportTickets\Api\Resource;
 
-use Acme\SupportTickets\Model\TicketCategory;
-use Flarum\Api\Context;
+use Cengizkemec\SupportTickets\Model\TicketCategory;
+use Tobyz\JsonApiServer\Context;
 use Flarum\Api\Endpoint;
 use Flarum\Api\Resource\AbstractDatabaseResource;
 use Flarum\Api\Schema;

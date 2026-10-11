@@ -28,7 +28,7 @@ export default class CreateTicketModal extends Modal {
   }
 
   title() {
-    return app.translator.trans('acme-support.forum.new_ticket');
+    return app.translator.trans('cengizkemec-support.forum.new_ticket');
   }
 
   content() {
@@ -36,7 +36,7 @@ export default class CreateTicketModal extends Modal {
       <div className="Modal-body">
         <div className="Form">
           <div className="Form-group">
-            <label>{app.translator.trans('acme-support.forum.category')}</label>
+            <label>{app.translator.trans('cengizkemec-support.forum.category')}</label>
             <select className="FormControl" value={this.categoryId()} onchange={(e: any) => this.categoryId(e.target.value)}>
               <option value="">--</option>
               {this.categories.map((cat: any) => (
@@ -46,12 +46,12 @@ export default class CreateTicketModal extends Modal {
           </div>
 
           <div className="Form-group">
-            <label>{app.translator.trans('acme-support.forum.subject')}</label>
+            <label>{app.translator.trans('cengizkemec-support.forum.subject')}</label>
             <input className="FormControl" value={this.subject()} oninput={(e: any) => this.subject(e.target.value)} required />
           </div>
 
           <div className="Form-group">
-            <label>{app.translator.trans('acme-support.forum.priority')}</label>
+            <label>{app.translator.trans('cengizkemec-support.forum.priority')}</label>
             <select className="FormControl" value={this.priority()} onchange={(e: any) => this.priority(e.target.value)}>
               <option value="low">Low</option>
               <option value="medium">Medium</option>
@@ -61,12 +61,12 @@ export default class CreateTicketModal extends Modal {
           </div>
 
           <div className="Form-group">
-            <label>{app.translator.trans('acme-support.forum.message')}</label>
+            <label>{app.translator.trans('cengizkemec-support.forum.message')}</label>
             <textarea className="FormControl" rows={6} value={this.message()} oninput={(e: any) => this.message(e.target.value)} required />
           </div>
 
           <div className="Form-group">
-            <label>{app.translator.trans('acme-support.forum.attachment')}</label>
+            <label>{app.translator.trans('cengizkemec-support.forum.attachment')}</label>
             <input type="file" className="FormControl" onchange={this.uploadFile.bind(this)} disabled={this.uploading} />
             {this.uploading && <span>Uploading...</span>}
             {this.attachmentName() && <div>Uploaded: {this.attachmentName()}</div>}
@@ -74,7 +74,7 @@ export default class CreateTicketModal extends Modal {
 
           <div className="Form-group">
             <Button className="Button Button--primary" loading={this.loading} disabled={this.loading || !this.subject() || !this.message()} onclick={this.submit.bind(this)}>
-              {app.translator.trans('acme-support.forum.create')}
+              {app.translator.trans('cengizkemec-support.forum.create')}
             </Button>
           </div>
         </div>

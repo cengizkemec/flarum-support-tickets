@@ -1,8 +1,8 @@
 <?php
 
-namespace Acme\SupportTickets\Notification;
+namespace Cengizkemec\SupportTickets\Notification;
 
-use Acme\SupportTickets\Model\Ticket;
+use Cengizkemec\SupportTickets\Model\Ticket;
 use Flarum\Notification\Blueprint\BlueprintInterface;
 use Flarum\Notification\MailableInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
@@ -41,14 +41,14 @@ class NewTicketBlueprint implements BlueprintInterface, MailableInterface
     public function getEmailView(TranslatorInterface $translator): array
     {
         return [
-            'text' => 'acme-support::emails.newTicket',
-            'html' => 'acme-support::emails.newTicketHtml',
+            'text' => 'cengizkemec-support::emails.newTicket',
+            'html' => 'cengizkemec-support::emails.newTicketHtml',
         ];
     }
 
     public function getEmailSubject(TranslatorInterface $translator): string
     {
-        return $translator->trans('acme-support.email.new_ticket_subject', [
+        return $translator->trans('cengizkemec-support.email.new_ticket_subject', [
             'subject' => $this->ticket->subject,
         ]);
     }

@@ -1,6 +1,6 @@
 <?php
 
-namespace Acme\SupportTickets\Api\Controller;
+namespace Cengizkemec\SupportTickets\Api\Controller;
 
 use Flarum\Foundation\Paths;
 use Flarum\Http\RequestUtil;

@@ -39,7 +39,7 @@ export default class TicketPage extends Page {
       <PageStructure className="TicketPage" hero={() => <h2>{ticket.subject()}</h2>}>
         <div className="TicketPage-meta">
           <span className={`TicketStatus TicketStatus--${ticket.status()}`}>
-            {app.translator.trans(`acme-support.forum.status.${ticket.status()}`)}
+            {app.translator.trans(`cengizkemec-support.forum.status.${ticket.status()}`)}
           </span>
           <span className="TicketPriority">{ticket.priority()}</span>
           {ticket.category() && <span> | {ticket.category().name()}</span>}
@@ -69,10 +69,10 @@ export default class TicketPage extends Page {
             rows={4}
             value={this.replyMessage()}
             oninput={(e: any) => this.replyMessage(e.target.value)}
-            placeholder={app.translator.trans('acme-support.forum.reply')}
+            placeholder={app.translator.trans('cengizkemec-support.forum.reply')}
           />
           <Button className="Button Button--primary" onclick={this.submitReply.bind(this)}>
-            {app.translator.trans('acme-support.forum.reply')}
+            {app.translator.trans('cengizkemec-support.forum.reply')}
           </Button>
 
           {isStaff && (

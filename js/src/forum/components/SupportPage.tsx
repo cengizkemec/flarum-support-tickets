@@ -25,10 +25,10 @@ export default class SupportPage extends Page {
 
   view() {
     return (
-      <PageStructure className="SupportPage" hero={() => <h2>{app.translator.trans('acme-support.forum.title')}</h2>}>
+      <PageStructure className="SupportPage" hero={() => <h2>{app.translator.trans('cengizkemec-support.forum.title')}</h2>}>
         <div className="SupportPage-toolbar">
           <Button className="Button Button--primary" onclick={() => app.modal.show(CreateTicketModal)}>
-            {app.translator.trans('acme-support.forum.new_ticket')}
+            {app.translator.trans('cengizkemec-support.forum.new_ticket')}
           </Button>
         </div>
 

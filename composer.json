@@ -1,5 +1,5 @@
 {
-  "name": "acme/support-tickets",
+  "name": "cengizkemec/support-tickets",
   "description": "HESK-style Support Ticket System for Flarum 2.0",
   "type": "flarum-extension",
   "license": "MIT",
@@ -9,7 +9,7 @@
   },
   "autoload": {
     "psr-4": {
-      "Acme\\SupportTickets\\": "src/"
+      "Cengizkemec\\SupportTickets\\": "src/"
     }
   },
   "extra": {

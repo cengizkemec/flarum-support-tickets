@@ -1,11 +1,11 @@
 <?php
 
-namespace Acme\SupportTickets\Listener;
+namespace Cengizkemec\SupportTickets\Listener;
 
-use Acme\SupportTickets\Model\Ticket;
-use Acme\SupportTickets\Model\TicketReply;
-use Acme\SupportTickets\Notification\NewTicketBlueprint;
-use Acme\SupportTickets\Notification\TicketReplyBlueprint;
+use Cengizkemec\SupportTickets\Model\Ticket;
+use Cengizkemec\SupportTickets\Model\TicketReply;
+use Cengizkemec\SupportTickets\Notification\NewTicketBlueprint;
+use Cengizkemec\SupportTickets\Notification\TicketReplyBlueprint;
 use Flarum\Notification\NotificationSyncer;
 use Flarum\User\User;
 use Illuminate\Contracts\Events\Dispatcher;

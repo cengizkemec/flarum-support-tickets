@@ -1,14 +1,14 @@
 <?php
 
-use Acme\SupportTickets\Access\TicketPolicy;
-use Acme\SupportTickets\Api\Controller\UploadAttachmentController;
-use Acme\SupportTickets\Api\Resource\TicketCategoryResource;
-use Acme\SupportTickets\Api\Resource\TicketReplyResource;
-use Acme\SupportTickets\Api\Resource\TicketResource;
-use Acme\SupportTickets\Listener\SendTicketNotifications;
-use Acme\SupportTickets\Model\Ticket;
-use Acme\SupportTickets\Notification\NewTicketBlueprint;
-use Acme\SupportTickets\Notification\TicketReplyBlueprint;
+use Cengizkemec\SupportTickets\Access\TicketPolicy;
+use Cengizkemec\SupportTickets\Api\Controller\UploadAttachmentController;
+use Cengizkemec\SupportTickets\Api\Resource\TicketCategoryResource;
+use Cengizkemec\SupportTickets\Api\Resource\TicketReplyResource;
+use Cengizkemec\SupportTickets\Api\Resource\TicketResource;
+use Cengizkemec\SupportTickets\Listener\SendTicketNotifications;
+use Cengizkemec\SupportTickets\Model\Ticket;
+use Cengizkemec\SupportTickets\Notification\NewTicketBlueprint;
+use Cengizkemec\SupportTickets\Notification\TicketReplyBlueprint;
 use Flarum\Extend;
 
 return [
@@ -40,10 +40,10 @@ return [
         ->subscribe(SendTicketNotifications::class),
 
     (new Extend\View())
-        ->namespace('acme-support', __DIR__.'/resources/views'),
+        ->namespace('cengizkemec-support', __DIR__.'/resources/views'),
 
     (new Extend\Settings())
-        ->serializeToForum('supportAutoCloseDays', 'acme-support.auto_close_days', 14)
-        ->default('acme-support.auto_close_days', 14)
-        ->default('acme-support.email_notifications', true),
+        ->serializeToForum('supportAutoCloseDays', 'cengizkemec-support.auto_close_days', 14)
+        ->default('cengizkemec-support.auto_close_days', 14)
+        ->default('cengizkemec-support.email_notifications', true),
 ];

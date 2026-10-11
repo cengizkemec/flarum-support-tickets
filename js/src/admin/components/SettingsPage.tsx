@@ -18,20 +18,20 @@ export default class SettingsPage extends ExtensionPage {
     return (
       <div className="ExtensionPage-settings">
         <div className="Form">
-          <h3>{app.translator.trans('acme-support.admin.settings')}</h3>
+          <h3>{app.translator.trans('cengizkemec-support.admin.settings')}</h3>
 
           {this.buildSettingComponent({
-            setting: 'acme-support.auto_close_days',
+            setting: 'cengizkemec-support.auto_close_days',
             type: 'number',
-            label: app.translator.trans('acme-support.admin.auto_close_days'),
+            label: app.translator.trans('cengizkemec-support.admin.auto_close_days'),
             min: 1,
             max: 365,
           })}
 
           {this.buildSettingComponent({
-            setting: 'acme-support.email_notifications',
+            setting: 'cengizkemec-support.email_notifications',
             type: 'boolean',
-            label: app.translator.trans('acme-support.admin.email_notifications'),
+            label: app.translator.trans('cengizkemec-support.admin.email_notifications'),
           })}
 
           <div className="Form-group">
@@ -40,7 +40,7 @@ export default class SettingsPage extends ExtensionPage {
 
           <hr />
 
-          <h3>{app.translator.trans('acme-support.admin.categories')}</h3>
+          <h3>{app.translator.trans('cengizkemec-support.admin.categories')}</h3>
           <ul>
             {this.categories.map((cat: any) => (
               <li key={cat.id()}>

@@ -7,7 +7,7 @@ export default class TicketList extends Component {
     const tickets = app.store.all('tickets');
 
     if (!tickets.length) {
-      return <div className="SupportPage-empty">{app.translator.trans('acme-support.forum.no_tickets')}</div>;
+      return <div className="SupportPage-empty">{app.translator.trans('cengizkemec-support.forum.no_tickets')}</div>;
     }
 
     return (
@@ -17,7 +17,7 @@ export default class TicketList extends Component {
             <Link href={app.route('support.ticket', { id: ticket.id() })}>
               <strong>{ticket.subject()}</strong>
               <span className={`TicketStatus TicketStatus--${ticket.status()}`}>
-                {app.translator.trans(`acme-support.forum.status.${ticket.status()}`)}
+                {app.translator.trans(`cengizkemec-support.forum.status.${ticket.status()}`)}
               </span>
               <span className="TicketPriority">{ticket.priority()}</span>
             </Link>

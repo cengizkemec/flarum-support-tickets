@@ -1,8 +1,8 @@
 <?php
 
-namespace Acme\SupportTickets\Access;
+namespace Cengizkemec\SupportTickets\Access;
 
-use Acme\SupportTickets\Model\Ticket;
+use Cengizkemec\SupportTickets\Model\Ticket;
 use Flarum\User\Access\AbstractPolicy;
 use Flarum\User\User;
 

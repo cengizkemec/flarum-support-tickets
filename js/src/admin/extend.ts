@@ -8,7 +8,7 @@ export default [
     .permission(
       () => ({
         icon: 'fas fa-eye',
-        label: app.translator.trans('acme-support.admin.permissions.view_all'),
+        label: app.translator.trans('cengizkemec-support.admin.permissions.view_all'),
         permission: 'support.viewAll',
       }),
       'moderate',
@@ -17,7 +17,7 @@ export default [
     .permission(
       () => ({
         icon: 'fas fa-reply',
-        label: app.translator.trans('acme-support.admin.permissions.reply'),
+        label: app.translator.trans('cengizkemec-support.admin.permissions.reply'),
         permission: 'support.reply',
       }),
       'reply',
@@ -26,7 +26,7 @@ export default [
     .permission(
       () => ({
         icon: 'fas fa-cog',
-        label: app.translator.trans('acme-support.admin.permissions.manage'),
+        label: app.translator.trans('cengizkemec-support.admin.permissions.manage'),
         permission: 'support.manage',
       }),
       'moderate',

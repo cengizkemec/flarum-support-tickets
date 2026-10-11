@@ -1,6 +1,6 @@
 <?php
 
-namespace Acme\SupportTickets\Model;
+namespace Cengizkemec\SupportTickets\Model;
 
 use Flarum\Database\AbstractModel;
 use Flarum\User\User;

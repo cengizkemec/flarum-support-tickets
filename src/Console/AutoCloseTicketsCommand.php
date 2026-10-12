@@ -21,13 +21,13 @@ class AutoCloseTicketsCommand extends AbstractCommand
             ->setDescription('Automatically close tickets that have been inactive for the configured number of days.');
     }
 
-    protected function fire(): void
+    protected function fire(): int
     {
         $days = (int) $this->settings->get('cengizkemec-support.auto_close_days', 0);
 
         if ($days <= 0) {
             $this->info('Auto-close is disabled (auto_close_days <= 0).');
-            return;
+            return 0;
         }
 
         $cutoff = Carbon::now()->subDays($days);
@@ -49,5 +49,7 @@ class AutoCloseTicketsCommand extends AbstractCommand
         }
 
         $this->info("Auto-closed {$closed} ticket(s) inactive for more than {$days} days.");
+
+        return 0;
     }
 }

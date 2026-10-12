@@ -100,8 +100,8 @@ export default class CreateTicketModal extends Modal {
         // Let browser set Content-Type for multipart
       });
 
-      this.attachmentUrl(response.url);
-      this.attachmentName(response.filename || file.name);
+      this.attachmentUrl(response.filename);
+      this.attachmentName(response.originalName || file.name);
     } catch (err) {
       app.alerts.show({ type: 'error' }, 'Upload failed');
     } finally {

@@ -11,6 +11,7 @@ export default class TicketPage extends Page {
     this.loading = true;
     this.error = null;
     this.replyMessage = Stream('');
+    this.submitting = false;
     this.ticket = null;
 
     const id = m.route.param('id');
@@ -24,7 +25,7 @@ export default class TicketPage extends Page {
       })
       .catch((e) => {
         this.loading = false;
-        this.error = e.message || 'Failed to load ticket';
+        this.error = e?.response?.errors?.[0]?.detail || e.message || 'Failed to load ticket';
         app.alerts.show({ type: 'error' }, this.error);
         m.redraw();
       });
@@ -65,7 +66,13 @@ export default class TicketPage extends Page {
 
         <div className="Post">
           <div className="Post-body">{ticket.message()}</div>
-          {ticket.attachment() && <div className="TicketAttachment">Attachment: {ticket.attachment()}</div>}
+          {ticket.attachment() && (
+            <div className="TicketAttachment">
+              <a href={app.forum.attribute('apiUrl') + '/support/attachments/' + ticket.attachment()} target="_blank" rel="noopener">
+                Attachment
+              </a>
+            </div>
+          )}
         </div>
 
         <div className="TicketReplies">
@@ -88,7 +95,12 @@ export default class TicketPage extends Page {
             oninput={(e: any) => this.replyMessage(e.target.value)}
             placeholder={app.translator.trans('cengizkemec-support.forum.reply')}
           />
-          <Button className="Button Button--primary" onclick={this.submitReply.bind(this)}>
+          <Button
+            className="Button Button--primary"
+            loading={this.submitting}
+            disabled={this.submitting || !this.replyMessage()}
+            onclick={this.submitReply.bind(this)}
+          >
             {app.translator.trans('cengizkemec-support.forum.reply')}
           </Button>
 
@@ -117,7 +129,10 @@ export default class TicketPage extends Page {
   }
 
   async submitReply() {
-    if (!this.replyMessage()) return;
+    if (!this.replyMessage() || this.submitting) return;
+
+    this.submitting = true;
+    m.redraw();
 
     try {
       await app.store.createRecord('ticket-replies').save({
@@ -131,16 +146,23 @@ export default class TicketPage extends Page {
       await app.store.find('tickets', this.ticket.id(), { include: 'replies,replies.user' });
       m.redraw();
     } catch (e: any) {
-      app.alerts.show({ type: 'error' }, e.message || 'Failed to send reply');
+      const msg = e?.response?.errors?.[0]?.detail || e.message || 'Failed to send reply';
+      app.alerts.show({ type: 'error' }, msg);
+    } finally {
+      this.submitting = false;
+      m.redraw();
     }
   }
 
   async updateStatus(status: string) {
+    const previous = this.ticket.status();
     try {
       await this.ticket.save({ status });
       m.redraw();
     } catch (e: any) {
-      app.alerts.show({ type: 'error' }, e.message || 'Failed to update status');
+      this.ticket.pushData({ attributes: { status: previous } });
+      app.alerts.show({ type: 'error' }, e?.response?.errors?.[0]?.detail || e.message || 'Failed to update status');
+      m.redraw();
     }
   }
 

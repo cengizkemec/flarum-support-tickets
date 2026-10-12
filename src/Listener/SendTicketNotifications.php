@@ -31,13 +31,25 @@ class SendTicketNotifications
             return;
         }
 
-        // Notify all users who can view all tickets (staff)
-        $recipients = User::all()->filter(function (User $user) {
-            return $user->can('support.viewAll');
-        });
+        // Notify staff who can view all tickets. Prefer groups with the permission.
+        $recipients = User::query()
+            ->where(function ($query) {
+                $query->whereHas('groups', function ($q) {
+                    $q->whereHas('permissions', function ($p) {
+                        $p->where('permission', 'support.viewAll');
+                    });
+                })->orWhere('is_admin', true);
+            })
+            ->get()
+            ->filter(fn (User $user) => $user->can('support.viewAll'));
 
         if ($recipients->isNotEmpty()) {
-            $this->notifications->sync(new NewTicketBlueprint($ticket), $recipients->all());
+            try {
+                $this->notifications->sync(new NewTicketBlueprint($ticket), $recipients->all());
+            } catch (\Throwable $e) {
+                // Do not fail ticket creation if notification fails
+                app('log')->error('Failed to send new ticket notification: ' . $e->getMessage());
+            }
         }
     }
 
@@ -48,23 +60,33 @@ class SendTicketNotifications
         }
 
         $ticket = $reply->ticket;
+        if (!$ticket) {
+            return;
+        }
+
         $recipients = collect();
 
-        // Notify ticket owner if reply is from staff
-        if ($reply->is_staff && $ticket->user_id !== $reply->user_id) {
+        // Notify ticket owner if reply is from staff and owner exists
+        if ($reply->is_staff && $ticket->user_id !== $reply->user_id && $ticket->user) {
             $recipients->push($ticket->user);
         }
 
         // Notify assignee if exists and different
         if ($ticket->assigned_to && $ticket->assigned_to !== $reply->user_id) {
             $assignee = User::find($ticket->assigned_to);
-            if ($assignee) {
+            if ($assignee && $assignee->id !== $reply->user_id) {
                 $recipients->push($assignee);
             }
         }
 
+        $recipients = $recipients->unique('id')->filter();
+
         if ($recipients->isNotEmpty()) {
-            $this->notifications->sync(new TicketReplyBlueprint($reply), $recipients->all());
+            try {
+                $this->notifications->sync(new TicketReplyBlueprint($reply), $recipients->all());
+            } catch (\Throwable $e) {
+                app('log')->error('Failed to send ticket reply notification: ' . $e->getMessage());
+            }
         }
     }
 }

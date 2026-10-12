@@ -47,7 +47,7 @@ return [
         ->namespace('cengizkemec-support', __DIR__.'/resources/views'),
 
     (new Extend\Settings())
-        ->serializeToForum('supportAutoCloseDays', 'cengizkemec-support.auto_close_days', 14)
+        ->serializeToForum('supportAutoCloseDays', 'cengizkemec-support.auto_close_days')
         ->default('cengizkemec-support.auto_close_days', 14)
         ->default('cengizkemec-support.email_notifications', true),
 

@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.6 — 2026-10-12
+
+### Fixed
+- Removed invalid third argument from `serializeToForum()`. Passing `14` caused `ReflectionException: Class "14" does not exist` because the parameter is a callback, not a default value.
+- Default for `auto_close_days` remains `14` via `->default()`.
+
 ## 1.0.5 — 2026-10-12
 
 ### Fixed

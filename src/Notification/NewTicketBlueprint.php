@@ -40,7 +40,7 @@ class NewTicketBlueprint implements BlueprintInterface, MailableInterface
         return Ticket::class;
     }
 
-    public function getEmailView(TranslatorInterface $translator): array
+    public function getEmailViews(): array
     {
         return [
             'text' => 'cengizkemec-support::emails.newTicket',

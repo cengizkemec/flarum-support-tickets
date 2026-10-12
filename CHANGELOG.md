@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.5 — 2026-10-12
+
+### Fixed
+- Renamed `getEmailView()` to `getEmailViews()` in notification blueprints to match Flarum 2.0 `MailableInterface`.
+- Prevents fatal error: "Class NewTicketBlueprint contains 1 abstract method ... (MailableInterface::getEmailViews)".
+
 ## 1.0.4 — 2026-10-12
 
 ### Fixed

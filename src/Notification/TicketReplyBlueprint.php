@@ -42,7 +42,7 @@ class TicketReplyBlueprint implements BlueprintInterface, MailableInterface
     {
         return [
             'text' => 'cengizkemec-support::emails.ticketReply',
-            'html' => 'cengizkemec-support::emails.ticketReplyHtml',
+            'html' => 'cengizkemec-support::emails.ticketReply',
         ];
     }
 

@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0.4 — 2026-10-12
+
+### Fixed
+- Notification blueprints now declare return types required by Flarum 2.0 `BlueprintInterface`:
+  - `getFromUser(): ?User`
+  - `getSubject(): ?AbstractModel`
+  - `getData(): mixed`
+- Prevents fatal error on extension enable when notification types are registered.
+
 ## 1.0.3 — 2026-10-12
 
 ### Fixed

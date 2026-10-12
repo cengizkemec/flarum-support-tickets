@@ -2,9 +2,12 @@
 
 namespace Cengizkemec\SupportTickets\Notification;
 
+use Cengizkemec\SupportTickets\Model\Ticket;
 use Cengizkemec\SupportTickets\Model\TicketReply;
+use Flarum\Database\AbstractModel;
 use Flarum\Notification\Blueprint\BlueprintInterface;
 use Flarum\Notification\MailableInterface;
+use Flarum\User\User;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 class TicketReplyBlueprint implements BlueprintInterface, MailableInterface
@@ -13,17 +16,17 @@ class TicketReplyBlueprint implements BlueprintInterface, MailableInterface
     {
     }
 
-    public function getFromUser()
+    public function getFromUser(): ?User
     {
         return $this->reply->user;
     }
 
-    public function getSubject()
+    public function getSubject(): ?AbstractModel
     {
         return $this->reply->ticket;
     }
 
-    public function getData()
+    public function getData(): mixed
     {
         return ['replyId' => $this->reply->id];
     }
@@ -35,7 +38,7 @@ class TicketReplyBlueprint implements BlueprintInterface, MailableInterface
 
     public static function getSubjectModel(): string
     {
-        return \Cengizkemec\SupportTickets\Model\Ticket::class;
+        return Ticket::class;
     }
 
     public function getEmailView(TranslatorInterface $translator): array

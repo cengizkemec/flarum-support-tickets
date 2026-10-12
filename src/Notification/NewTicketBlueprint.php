@@ -42,7 +42,7 @@ class NewTicketBlueprint implements BlueprintInterface, MailableInterface
     {
         return [
             'text' => 'cengizkemec-support::emails.newTicket',
-            'html' => 'cengizkemec-support::emails.newTicketHtml',
+            'html' => 'cengizkemec-support::emails.newTicket',
         ];
     }
 

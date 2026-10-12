@@ -9,6 +9,7 @@ export default class TicketPage extends Page {
   oninit(vnode: any) {
     super.oninit(vnode);
     this.loading = true;
+    this.error = null;
     this.replyMessage = Stream('');
     this.ticket = null;
 
@@ -20,14 +21,30 @@ export default class TicketPage extends Page {
         this.ticket = ticket;
         this.loading = false;
         m.redraw();
+      })
+      .catch((e) => {
+        this.loading = false;
+        this.error = e.message || 'Failed to load ticket';
+        app.alerts.show({ type: 'error' }, this.error);
+        m.redraw();
       });
   }
 
   view() {
-    if (this.loading || !this.ticket) {
+    if (this.loading) {
       return (
         <PageStructure>
           <LoadingIndicator />
+        </PageStructure>
+      );
+    }
+
+    if (this.error || !this.ticket) {
+      return (
+        <PageStructure>
+          <div className="Placeholder">
+            <p>{this.error || 'Ticket not found or access denied.'}</p>
+          </div>
         </PageStructure>
       );
     }
@@ -102,31 +119,42 @@ export default class TicketPage extends Page {
   async submitReply() {
     if (!this.replyMessage()) return;
 
-    await app.store.createRecord('ticket-replies').save({
-      message: this.replyMessage(),
-      relationships: {
-        ticket: this.ticket,
-      },
-    });
+    try {
+      await app.store.createRecord('ticket-replies').save({
+        message: this.replyMessage(),
+        relationships: {
+          ticket: this.ticket,
+        },
+      });
 
-    this.replyMessage('');
-    // Refresh replies
-    await app.store.find('tickets', this.ticket.id(), { include: 'replies,replies.user' });
-    m.redraw();
+      this.replyMessage('');
+      await app.store.find('tickets', this.ticket.id(), { include: 'replies,replies.user' });
+      m.redraw();
+    } catch (e: any) {
+      app.alerts.show({ type: 'error' }, e.message || 'Failed to send reply');
+    }
   }
 
   async updateStatus(status: string) {
-    await this.ticket.save({ status });
-    m.redraw();
+    try {
+      await this.ticket.save({ status });
+      m.redraw();
+    } catch (e: any) {
+      app.alerts.show({ type: 'error' }, e.message || 'Failed to update status');
+    }
   }
 
   async assignTo(userId: string) {
     if (!userId) return;
-    await this.ticket.save({
-      relationships: {
-        assignee: app.store.getById('users', userId),
-      },
-    });
-    m.redraw();
+    try {
+      await this.ticket.save({
+        relationships: {
+          assignee: app.store.getById('users', userId),
+        },
+      });
+      m.redraw();
+    } catch (e: any) {
+      app.alerts.show({ type: 'error' }, e.message || 'Failed to assign');
+    }
   }
 }

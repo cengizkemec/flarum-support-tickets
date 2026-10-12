@@ -7,13 +7,16 @@ use Cengizkemec\SupportTickets\Model\TicketReply;
 use Cengizkemec\SupportTickets\Notification\NewTicketBlueprint;
 use Cengizkemec\SupportTickets\Notification\TicketReplyBlueprint;
 use Flarum\Notification\NotificationSyncer;
+use Flarum\Settings\SettingsRepositoryInterface;
 use Flarum\User\User;
 use Illuminate\Contracts\Events\Dispatcher;
 
 class SendTicketNotifications
 {
-    public function __construct(protected NotificationSyncer $notifications)
-    {
+    public function __construct(
+        protected NotificationSyncer $notifications,
+        protected SettingsRepositoryInterface $settings
+    ) {
     }
 
     public function subscribe(Dispatcher $events): void
@@ -24,16 +27,26 @@ class SendTicketNotifications
 
     public function whenTicketCreated(Ticket $ticket): void
     {
-        // Notify staff (moderators/admins)
-        $recipients = User::whereHas('groups', function ($q) {
-            $q->whereIn('id', [1, 4]); // Admin + Moderator example
-        })->get();
+        if (!$this->settings->get('cengizkemec-support.email_notifications', true)) {
+            return;
+        }
 
-        $this->notifications->sync(new NewTicketBlueprint($ticket), $recipients->all());
+        // Notify all users who can view all tickets (staff)
+        $recipients = User::all()->filter(function (User $user) {
+            return $user->can('support.viewAll');
+        });
+
+        if ($recipients->isNotEmpty()) {
+            $this->notifications->sync(new NewTicketBlueprint($ticket), $recipients->all());
+        }
     }
 
     public function whenReplyCreated(TicketReply $reply): void
     {
+        if (!$this->settings->get('cengizkemec-support.email_notifications', true)) {
+            return;
+        }
+
         $ticket = $reply->ticket;
         $recipients = collect();
 

@@ -56,4 +56,33 @@ class TicketResource extends AbstractDatabaseResource
             Schema\Relationship\ToMany::make('replies')->type('ticket-replies')->includable(),
         ];
     }
+
+    public function creating(object $model, Context $context): ?object
+    {
+        /** @var Ticket $model */
+        $actor = $context->getActor();
+        $model->user_id = $actor->id;
+        $model->status = $model->status ?? 'new';
+
+        return parent::creating($model, $context);
+    }
+
+    public function updating(object $model, Context $context): ?object
+    {
+        /** @var Ticket $model */
+        $actor = $context->getActor();
+
+        // Non-staff can only update message/subject (if allowed by policy), not status/priority/assignee
+        if (!$actor->can('support.viewAll')) {
+            // Reset protected fields if they were changed
+            $original = Ticket::find($model->id);
+            if ($original) {
+                $model->status = $original->status;
+                $model->priority = $original->priority;
+                $model->assigned_to = $original->assigned_to;
+            }
+        }
+
+        return parent::updating($model, $context);
+    }
 }

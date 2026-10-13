@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0.7 — 2026-10-13
+
+### Fixed / Verified
+- Confirmed working on a real Flarum 2.0.0 installation (PHP 8.3, SQLite).
+- `extension:enable` succeeds without fatal errors.
+- Migrations create `ticket_categories`, `tickets`, `ticket_replies` tables.
+- `support-tickets:auto-close` command runs and returns `0`.
+- Added `$guarded = []` on models to avoid mass-assignment issues.
+
 ## 1.0.6 — 2026-10-12
 
 ### Fixed

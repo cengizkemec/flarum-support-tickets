@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Ticket extends AbstractModel
 {
     protected $table = 'tickets';
+    protected $guarded = [];
     protected $dates = ['created_at', 'updated_at', 'closed_at'];
 
     public function user(): BelongsTo

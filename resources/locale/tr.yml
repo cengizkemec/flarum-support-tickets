@@ -36,6 +36,20 @@ cengizkemec-support:
   email:
     new_ticket_subject: "Yeni destek bileti: {subject}"
     reply_subject: "Yeni yanıt: {subject}"
+    new_ticket:
+      body: |
+        {opener_display_name} yeni bir destek bileti açtı: "{title}".
+
+        {content}
+
+        {url}
+    ticket_reply:
+      body: |
+        {author_display_name}, "{title}" destek biletine yanıt verdi.
+
+        {content}
+
+        {url}
   notification:
     new_ticket: "Yeni destek bileti oluşturuldu"
     ticket_reply: "Biletinize yeni yanıt geldi"

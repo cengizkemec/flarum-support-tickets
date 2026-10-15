@@ -54,7 +54,7 @@ class TicketReplyResource extends AbstractDatabaseResource
             Schema\DateTime::make('createdAt'),
 
             Schema\Relationship\ToOne::make('user')->type('users')->includable(),
-            Schema\Relationship\ToOne::make('ticket')->type('tickets')->includable()->requiredOnCreate(),
+            Schema\Relationship\ToOne::make('ticket')->type('tickets')->includable()->requiredOnCreate()->writableOnCreate(),
         ];
     }
 

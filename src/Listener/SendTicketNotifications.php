@@ -6,10 +6,12 @@ use Cengizkemec\SupportTickets\Model\Ticket;
 use Cengizkemec\SupportTickets\Model\TicketReply;
 use Cengizkemec\SupportTickets\Notification\NewTicketBlueprint;
 use Cengizkemec\SupportTickets\Notification\TicketReplyBlueprint;
+use Flarum\Group\Group;
 use Flarum\Notification\NotificationSyncer;
 use Flarum\Settings\SettingsRepositoryInterface;
 use Flarum\User\User;
 use Illuminate\Contracts\Events\Dispatcher;
+use Illuminate\Support\Collection;
 
 class SendTicketNotifications
 {
@@ -27,21 +29,13 @@ class SendTicketNotifications
 
     public function whenTicketCreated(Ticket $ticket): void
     {
-        if (!$this->settings->get('cengizkemec-support.email_notifications', true)) {
+        if (!$this->notificationsEnabled()) {
             return;
         }
 
-        // Notify staff who can view all tickets. Prefer groups with the permission.
-        $recipients = User::query()
-            ->where(function ($query) {
-                $query->whereHas('groups', function ($q) {
-                    $q->whereHas('permissions', function ($p) {
-                        $p->where('permission', 'support.viewAll');
-                    });
-                })->orWhere('is_admin', true);
-            })
-            ->get()
-            ->filter(fn (User $user) => $user->can('support.viewAll'));
+        // Notify all staff so someone can pick the ticket up, but never the creator.
+        $recipients = $this->staffRecipients()
+            ->reject(fn (User $user) => $user->id === $ticket->user_id);
 
         if ($recipients->isNotEmpty()) {
             try {
@@ -55,7 +49,7 @@ class SendTicketNotifications
 
     public function whenReplyCreated(TicketReply $reply): void
     {
-        if (!$this->settings->get('cengizkemec-support.email_notifications', true)) {
+        if (!$this->notificationsEnabled()) {
             return;
         }
 
@@ -66,20 +60,28 @@ class SendTicketNotifications
 
         $recipients = collect();
 
-        // Notify ticket owner if reply is from staff and owner exists
-        if ($reply->is_staff && $ticket->user_id !== $reply->user_id && $ticket->user) {
-            $recipients->push($ticket->user);
+        if ($reply->is_staff) {
+            // A staff member replied: let the requester know.
+            if ($ticket->user && $ticket->user_id !== $reply->user_id) {
+                $recipients->push($ticket->user);
+            }
+        } else {
+            // The requester replied: notify staff so the ticket does not stall.
+            $recipients = $recipients->merge($this->staffRecipients());
         }
 
-        // Notify assignee if exists and different
+        // Always notify the assignee (when someone other than the author is assigned).
         if ($ticket->assigned_to && $ticket->assigned_to !== $reply->user_id) {
             $assignee = User::find($ticket->assigned_to);
-            if ($assignee && $assignee->id !== $reply->user_id) {
+            if ($assignee) {
                 $recipients->push($assignee);
             }
         }
 
-        $recipients = $recipients->unique('id')->filter();
+        $recipients = $recipients
+            ->filter()
+            ->unique('id')
+            ->reject(fn (User $user) => $user->id === $reply->user_id);
 
         if ($recipients->isNotEmpty()) {
             try {
@@ -88,5 +90,29 @@ class SendTicketNotifications
                 app('log')->error('Failed to send ticket reply notification: ' . $e->getMessage());
             }
         }
+    }
+
+    protected function notificationsEnabled(): bool
+    {
+        return (bool) $this->settings->get('cengizkemec-support.email_notifications', true);
+    }
+
+    /**
+     * All users that are allowed to see every ticket (admins + users whose
+     * group holds the support.viewAll permission).
+     *
+     * @return Collection<int, User>
+     */
+    protected function staffRecipients(): Collection
+    {
+        return User::query()
+            ->whereHas('groups', function ($q) {
+                $q->where('id', Group::ADMINISTRATOR_ID)
+                    ->orWhereHas('permissions', function ($p) {
+                        $p->where('permission', 'support.viewAll');
+                    });
+            })
+            ->get()
+            ->filter(fn (User $user) => $user->can('support.viewAll'));
     }
 }

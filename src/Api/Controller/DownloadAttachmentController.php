@@ -6,7 +6,9 @@ use Cengizkemec\SupportTickets\Model\Ticket;
 use Cengizkemec\SupportTickets\Model\TicketReply;
 use Flarum\Foundation\Paths;
 use Flarum\Http\RequestUtil;
+use Illuminate\Support\Arr;
 use Laminas\Diactoros\Response;
+use Laminas\Diactoros\Response\EmptyResponse;
 use Laminas\Diactoros\Stream;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -23,9 +25,10 @@ class DownloadAttachmentController implements RequestHandlerInterface
         $actor = RequestUtil::getActor($request);
         $actor->assertRegistered();
 
-        $filename = $request->getAttribute('filename');
-        if (!$filename || !preg_match('/^[a-zA-Z0-9_\-\.]+\.[a-zA-Z0-9]+$/', $filename)) {
-            return new Response(null, 400);
+        // Flarum (Extend\Routes) merges route parameters into the query params.
+        $filename = Arr::get($request->getQueryParams(), 'filename');
+        if (!is_string($filename) || !preg_match('/^[a-zA-Z0-9_\-\.]+\.[a-zA-Z0-9]+$/', $filename)) {
+            return new EmptyResponse(400);
         }
 
         // Prevent path traversal
@@ -33,7 +36,7 @@ class DownloadAttachmentController implements RequestHandlerInterface
         $fullPath = $this->paths->storage . '/support-tickets/' . $filename;
 
         if (!is_file($fullPath) || !is_readable($fullPath)) {
-            return new Response(null, 404);
+            return new EmptyResponse(404);
         }
 
         // Find which ticket/reply owns this attachment
@@ -47,12 +50,12 @@ class DownloadAttachmentController implements RequestHandlerInterface
         }
 
         if (!$ticket) {
-            return new Response(null, 404);
+            return new EmptyResponse(404);
         }
 
         // Authorization: must be able to view the ticket
         if (!$actor->can('view', $ticket)) {
-            return new Response(null, 403);
+            return new EmptyResponse(403);
         }
 
         $stream = new Stream($fullPath, 'r');

@@ -11,8 +11,11 @@ use Cengizkemec\SupportTickets\Listener\SendTicketNotifications;
 use Cengizkemec\SupportTickets\Model\Ticket;
 use Cengizkemec\SupportTickets\Notification\NewTicketBlueprint;
 use Cengizkemec\SupportTickets\Notification\TicketReplyBlueprint;
+use Flarum\Api\Resource\ForumResource;
+use Flarum\Api\Schema;
 use Flarum\Extend;
 use Illuminate\Console\Scheduling\Event;
+use Tobyz\JsonApiServer\Context;
 
 return [
     (new Extend\Frontend('forum'))
@@ -32,6 +35,16 @@ return [
     new Extend\ApiResource(TicketResource::class),
     new Extend\ApiResource(TicketCategoryResource::class),
     new Extend\ApiResource(TicketReplyResource::class),
+
+    // Expose staff capabilities to the frontend as forum attributes:
+    // app.forum.attribute('canSupportViewAll') / ('canSupportManage').
+    (new Extend\ApiResource(ForumResource::class))
+        ->fields(fn () => [
+            Schema\Boolean::make('canSupportViewAll')
+                ->get(fn ($model, Context $context) => $context->getActor()->can('support.viewAll')),
+            Schema\Boolean::make('canSupportManage')
+                ->get(fn ($model, Context $context) => $context->getActor()->can('support.manage')),
+        ]),
 
     (new Extend\Policy())
         ->modelPolicy(Ticket::class, TicketPolicy::class),

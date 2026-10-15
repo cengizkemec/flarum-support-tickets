@@ -4,12 +4,13 @@ namespace Cengizkemec\SupportTickets\Notification;
 
 use Cengizkemec\SupportTickets\Model\Ticket;
 use Flarum\Database\AbstractModel;
+use Flarum\Notification\AlertableInterface;
 use Flarum\Notification\Blueprint\BlueprintInterface;
 use Flarum\Notification\MailableInterface;
 use Flarum\User\User;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
-class NewTicketBlueprint implements BlueprintInterface, MailableInterface
+class NewTicketBlueprint implements BlueprintInterface, MailableInterface, AlertableInterface
 {
     public function __construct(public Ticket $ticket)
     {
@@ -43,8 +44,8 @@ class NewTicketBlueprint implements BlueprintInterface, MailableInterface
     public function getEmailViews(): array
     {
         return [
-            'text' => 'cengizkemec-support::emails.newTicket',
-            'html' => 'cengizkemec-support::emails.newTicket',
+            'text' => 'cengizkemec-support::emails.plain.newTicket',
+            'html' => 'cengizkemec-support::emails.html.newTicket',
         ];
     }
 

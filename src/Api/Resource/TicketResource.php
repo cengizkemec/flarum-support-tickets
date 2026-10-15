@@ -2,11 +2,13 @@
 
 namespace Cengizkemec\SupportTickets\Api\Resource;
 
+use Carbon\Carbon;
 use Cengizkemec\SupportTickets\Model\Ticket;
 use Tobyz\JsonApiServer\Context;
 use Flarum\Api\Endpoint;
 use Flarum\Api\Resource\AbstractDatabaseResource;
 use Flarum\Api\Schema;
+use Flarum\Api\Sort\SortColumn;
 use Flarum\User\Exception\PermissionDeniedException;
 
 class TicketResource extends AbstractDatabaseResource
@@ -42,6 +44,14 @@ class TicketResource extends AbstractDatabaseResource
         ];
     }
 
+    public function sorts(): array
+    {
+        return [
+            SortColumn::make('createdAt'),
+            SortColumn::make('updatedAt'),
+        ];
+    }
+
     public function fields(): array
     {
         return [
@@ -59,7 +69,7 @@ class TicketResource extends AbstractDatabaseResource
             Schema\DateTime::make('closedAt')->nullable(),
 
             Schema\Relationship\ToOne::make('user')->type('users')->includable(),
-            Schema\Relationship\ToOne::make('category')->type('ticket-categories')->includable(),
+            Schema\Relationship\ToOne::make('category')->type('ticket-categories')->includable()->writable(),
             Schema\Relationship\ToOne::make('assignee')
                 ->type('users')
                 ->includable()
@@ -112,7 +122,7 @@ class TicketResource extends AbstractDatabaseResource
         }
 
         if ($model->status === 'closed' && !$model->closed_at) {
-            $model->closed_at = now();
+            $model->closed_at = Carbon::now();
         }
 
         return parent::updating($model, $context);

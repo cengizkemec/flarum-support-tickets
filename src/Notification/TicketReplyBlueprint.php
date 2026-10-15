@@ -5,12 +5,13 @@ namespace Cengizkemec\SupportTickets\Notification;
 use Cengizkemec\SupportTickets\Model\Ticket;
 use Cengizkemec\SupportTickets\Model\TicketReply;
 use Flarum\Database\AbstractModel;
+use Flarum\Notification\AlertableInterface;
 use Flarum\Notification\Blueprint\BlueprintInterface;
 use Flarum\Notification\MailableInterface;
 use Flarum\User\User;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
-class TicketReplyBlueprint implements BlueprintInterface, MailableInterface
+class TicketReplyBlueprint implements BlueprintInterface, MailableInterface, AlertableInterface
 {
     public function __construct(public TicketReply $reply)
     {
@@ -44,8 +45,8 @@ class TicketReplyBlueprint implements BlueprintInterface, MailableInterface
     public function getEmailViews(): array
     {
         return [
-            'text' => 'cengizkemec-support::emails.ticketReply',
-            'html' => 'cengizkemec-support::emails.ticketReply',
+            'text' => 'cengizkemec-support::emails.plain.ticketReply',
+            'html' => 'cengizkemec-support::emails.html.ticketReply',
         ];
     }
 

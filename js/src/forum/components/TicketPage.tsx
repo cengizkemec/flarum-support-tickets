@@ -51,7 +51,7 @@ export default class TicketPage extends Page {
     }
 
     const ticket = this.ticket;
-    const isStaff = app.session.user?.can?.('support.viewAll');
+    const isStaff = app.forum.attribute<boolean>('canSupportViewAll') || app.forum.attribute<boolean>('canSupportManage');
 
     return (
       <PageStructure className="TicketPage" hero={() => <h2>{ticket.subject()}</h2>}>
@@ -169,9 +169,10 @@ export default class TicketPage extends Page {
   async assignTo(userId: string) {
     if (!userId) return;
     try {
+      const user = await app.store.find('users', userId);
       await this.ticket.save({
         relationships: {
-          assignee: app.store.getById('users', userId),
+          assignee: user,
         },
       });
       m.redraw();

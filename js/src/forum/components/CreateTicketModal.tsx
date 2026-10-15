@@ -39,9 +39,11 @@ export default class CreateTicketModal extends Modal {
             <label>{app.translator.trans('cengizkemec-support.forum.category')}</label>
             <select className="FormControl" value={this.categoryId()} onchange={(e: any) => this.categoryId(e.target.value)}>
               <option value="">--</option>
-              {this.categories.map((cat: any) => (
-                <option value={cat.id()}>{cat.name()}</option>
-              ))}
+              {this.categories
+                .filter((cat: any) => cat.isActive())
+                .map((cat: any) => (
+                  <option value={cat.id()}>{cat.name()}</option>
+                ))}
             </select>
           </div>
 
@@ -137,6 +139,7 @@ export default class CreateTicketModal extends Modal {
       m.route.set(app.route('support.ticket', { id: ticket.id() }));
     } catch (e) {
       this.loading = false;
+      app.alerts.show({ type: 'error' }, e?.response?.errors?.[0]?.detail || e.message || 'Failed to create ticket');
       m.redraw();
     }
   }

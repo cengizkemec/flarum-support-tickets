@@ -10,8 +10,15 @@ class TicketReply extends AbstractModel
 {
     protected $table = 'ticket_replies';
     protected $guarded = [];
+    public $timestamps = true;
+
     protected $fillable = ['ticket_id', 'user_id', 'message', 'attachment', 'is_staff'];
-    protected $dates = ['created_at', 'updated_at'];
+
+    protected $casts = [
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+        'is_staff' => 'boolean',
+    ];
 
     public function ticket(): BelongsTo
     {

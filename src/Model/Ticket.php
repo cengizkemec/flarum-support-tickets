@@ -11,7 +11,13 @@ class Ticket extends AbstractModel
 {
     protected $table = 'tickets';
     protected $guarded = [];
-    protected $dates = ['created_at', 'updated_at', 'closed_at'];
+    public $timestamps = true;
+
+    protected $casts = [
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+        'closed_at' => 'datetime',
+    ];
 
     public function user(): BelongsTo
     {

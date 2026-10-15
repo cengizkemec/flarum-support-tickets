@@ -36,6 +36,20 @@ cengizkemec-support:
   email:
     new_ticket_subject: "New support ticket: {subject}"
     reply_subject: "New reply on: {subject}"
+    new_ticket:
+      body: |
+        {opener_display_name} opened a new support ticket "{title}".
+
+        {content}
+
+        {url}
+    ticket_reply:
+      body: |
+        {author_display_name} replied to the support ticket "{title}".
+
+        {content}
+
+        {url}
   notification:
     new_ticket: "New support ticket created"
     ticket_reply: "New reply on your ticket"

@@ -11,7 +11,8 @@ cengizkemec-support:
       manage: Destek biletlerini yönet
   forum:
     nav_item: Destek
-    title: Destek Biletleri
+    title: Destek Merkezi
+    subtitle: Bir bilet oluşturun, ekibimiz en kısa sürede size dönüş yapacaktır.
     new_ticket: Yeni Bilet
     my_tickets: Biletlerim
     status:
@@ -25,14 +26,46 @@ cengizkemec-support:
       medium: Orta
       high: Yüksek
       critical: Kritik
+    priority_label: Öncelik
+    tab_all: Tümü
+    tab_open: Açık
+    tab_closed: Kapalı
+    stat_total: Toplam
+    stat_open: Açık
+    stat_closed: Kapalı
     category: Kategori
+    category_none: Kategori seçin
     subject: Konu
+    subject_placeholder: Sorununuzu kısaca özetleyin
     message: Mesaj
+    message_placeholder: Sorununuzu ayrıntılı olarak açıklayın...
     attachment: Ek
+    upload: Yükle
+    uploading: Yükleniyor...
+    upload_done: Yüklendi
+    upload_failed: Yükleme başarısız oldu. Lütfen tekrar deneyin.
     create: Bilet Oluştur
     reply: Yanıtla
+    reply_placeholder: Bir yanıt yazın...
+    send_reply: Yanıt Gönder
     assigned_to: Atanan
-    no_tickets: Henüz biletiniz yok.
+    unassigned: Atanmamış
+    staff: Ekip
+    staff_panel: Ekip İşlemleri
+    status_label: Durum
+    reopen: Yeniden Aç
+    mark_resolved: Çözüldü Olarak İşaretle
+    close_ticket: Kapat
+    closed_note: Bu bilet kapatıldı. Sohbete devam etmek için yeniden açın.
+    unknown_user: Bilinmeyen kullanıcı
+    empty_title: Henüz bilet yok
+    empty_text: Bir destek bileti oluşturduğunuzda burada görünecektir.
+    error_load: Bilet yüklenemedi.
+    error_not_found: Bilet bulunamadı veya erişim reddedildi.
+    error_reply: Yanıt gönderilemedi.
+    error_status: Durum güncellenemedi.
+    error_assign: Bilet atanamadı.
+    error_create: Bilet oluşturulamadı.
   email:
     new_ticket_subject: "Yeni destek bileti: {subject}"
     reply_subject: "Yeni yanıt: {subject}"

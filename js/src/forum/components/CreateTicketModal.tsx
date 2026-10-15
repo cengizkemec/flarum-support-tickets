@@ -3,22 +3,26 @@ import Button from 'flarum/common/components/Button';
 import Stream from 'flarum/common/utils/Stream';
 import app from 'flarum/forum/app';
 
+const T = (key: string, params?: any) => app.translator.trans('cengizkemec-support.forum.' + key, params);
+
+const PRIORITIES = ['low', 'medium', 'high', 'critical'];
+
 export default class CreateTicketModal extends Modal {
+  subject = Stream('');
+  message = Stream('');
+  priority = Stream('medium');
+  categoryId = Stream('');
+  attachmentUrl = Stream('');
+  attachmentName = Stream('');
+  categories: any[] = [];
+  loading = false;
+  uploading = false;
+
   oninit(vnode: any) {
     super.oninit(vnode);
 
-    this.subject = Stream('');
-    this.message = Stream('');
-    this.priority = Stream('medium');
-    this.categoryId = Stream('');
-    this.attachmentUrl = Stream('');
-    this.attachmentName = Stream('');
-    this.categories = [];
-    this.loading = false;
-    this.uploading = false;
-
     app.store.find('ticket-categories').then((cats) => {
-      this.categories = cats;
+      this.categories = (cats as any[]).filter((c: any) => c.isActive());
       m.redraw();
     });
   }
@@ -28,55 +32,85 @@ export default class CreateTicketModal extends Modal {
   }
 
   title() {
-    return app.translator.trans('cengizkemec-support.forum.new_ticket');
+    return T('new_ticket');
+  }
+
+  selectedCategory(): any {
+    if (!this.categoryId()) return null;
+    return app.store.getById('ticket-categories', this.categoryId());
   }
 
   content() {
+    const selected = this.selectedCategory();
+
     return (
       <div className="Modal-body">
         <div className="Form">
           <div className="Form-group">
-            <label>{app.translator.trans('cengizkemec-support.forum.category')}</label>
+            <label>{T('subject')}</label>
+            <input
+              className="FormControl"
+              value={this.subject()}
+              oninput={(e: any) => this.subject(e.target.value)}
+              placeholder={T('subject_placeholder')}
+              required
+            />
+          </div>
+
+          <div className="Form-group">
+            <label>{T('category')}</label>
             <select className="FormControl" value={this.categoryId()} onchange={(e: any) => this.categoryId(e.target.value)}>
-              <option value="">--</option>
-              {this.categories
-                .filter((cat: any) => cat.isActive())
-                .map((cat: any) => (
-                  <option value={cat.id()}>{cat.name()}</option>
-                ))}
+              <option value="">{T('category_none')}</option>
+              {this.categories.map((cat: any) => (
+                <option value={String(cat.id())}>{cat.name()}</option>
+              ))}
             </select>
+            {selected && selected.description() && <div className="TicketCategoryHint">{selected.description()}</div>}
           </div>
 
           <div className="Form-group">
-            <label>{app.translator.trans('cengizkemec-support.forum.subject')}</label>
-            <input className="FormControl" value={this.subject()} oninput={(e: any) => this.subject(e.target.value)} required />
-          </div>
-
-          <div className="Form-group">
-            <label>{app.translator.trans('cengizkemec-support.forum.priority')}</label>
+            <label>{T('priority_label')}</label>
             <select className="FormControl" value={this.priority()} onchange={(e: any) => this.priority(e.target.value)}>
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-              <option value="high">High</option>
-              <option value="critical">Critical</option>
+              {PRIORITIES.map((p) => (
+                <option value={p}>{T('priority.' + p)}</option>
+              ))}
             </select>
           </div>
 
           <div className="Form-group">
-            <label>{app.translator.trans('cengizkemec-support.forum.message')}</label>
-            <textarea className="FormControl" rows={6} value={this.message()} oninput={(e: any) => this.message(e.target.value)} required />
+            <label>{T('message')}</label>
+            <textarea
+              className="FormControl"
+              rows={6}
+              value={this.message()}
+              oninput={(e: any) => this.message(e.target.value)}
+              placeholder={T('message_placeholder')}
+              required
+            />
           </div>
 
           <div className="Form-group">
-            <label>{app.translator.trans('cengizkemec-support.forum.attachment')}</label>
-            <input type="file" className="FormControl" onchange={this.uploadFile.bind(this)} disabled={this.uploading} />
-            {this.uploading && <span>Uploading...</span>}
-            {this.attachmentName() && <div>Uploaded: {this.attachmentName()}</div>}
+            <label>{T('attachment')}</label>
+            <div className="TicketUploadRow">
+              <input type="file" className="FormControl" onchange={this.uploadFile.bind(this)} disabled={this.uploading} />
+              {this.uploading && <span className="TicketUploadStatus">{T('uploading')}</span>}
+              {!this.uploading && this.attachmentName() && (
+                <span className="TicketUploadDone">
+                  <i className="icon fas fa-check" /> {this.attachmentName()}
+                </span>
+              )}
+            </div>
           </div>
 
           <div className="Form-group">
-            <Button className="Button Button--primary" loading={this.loading} disabled={this.loading || !this.subject() || !this.message()} onclick={this.submit.bind(this)}>
-              {app.translator.trans('cengizkemec-support.forum.create')}
+            <Button
+              className="Button Button--primary"
+              icon="fas fa-paper-plane"
+              loading={this.loading}
+              disabled={this.loading || !this.subject() || !this.message()}
+              onclick={this.submit.bind(this)}
+            >
+              {T('create')}
             </Button>
           </div>
         </div>
@@ -99,13 +133,12 @@ export default class CreateTicketModal extends Modal {
         method: 'POST',
         url: app.forum.attribute('apiUrl') + '/support/upload',
         body: formData,
-        // Let browser set Content-Type for multipart
       });
 
       this.attachmentUrl(response.filename);
       this.attachmentName(response.originalName || file.name);
     } catch (err) {
-      app.alerts.show({ type: 'error' }, 'Upload failed');
+      app.alerts.show({ type: 'error' }, T('upload_failed'));
     } finally {
       this.uploading = false;
       m.redraw();
@@ -114,13 +147,13 @@ export default class CreateTicketModal extends Modal {
 
   async submit() {
     this.loading = true;
+    m.redraw();
 
     try {
       const data: any = {
         subject: this.subject(),
         message: this.message(),
         priority: this.priority(),
-        status: 'new',
       };
 
       if (this.attachmentUrl()) {
@@ -137,9 +170,9 @@ export default class CreateTicketModal extends Modal {
 
       app.modal.close();
       m.route.set(app.route('support.ticket', { id: ticket.id() }));
-    } catch (e) {
+    } catch (e: any) {
       this.loading = false;
-      app.alerts.show({ type: 'error' }, e?.response?.errors?.[0]?.detail || e.message || 'Failed to create ticket');
+      app.alerts.show({ type: 'error' }, e?.response?.errors?.[0]?.detail || e?.message || T('error_create'));
       m.redraw();
     }
   }

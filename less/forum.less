@@ -1,42 +1,632 @@
-.SupportPage-toolbar {
-  margin-bottom: 20px;
+// ============================================================================
+//  Support Tickets — forum stylesheet
+//  A clean, modern support-center UI for Flarum 2.
+// ============================================================================
+
+// --- Local design tokens -----------------------------------------------------
+@st-radius:        10px;
+@st-radius-sm:     8px;
+@st-gap:           18px;
+@st-transition:    0.18s ease;
+
+@st-accent:        #4f46e5; // indigo
+@st-new:           #2563eb; // blue
+@st-answered:      #059669; // green
+@st-pending:       #d97706; // amber
+@st-resolved:      #7c3aed; // violet
+@st-closed:        #64748b; // slate
+
+@st-p-low:         #10b981;
+@st-p-medium:      #3b82f6;
+@st-p-high:        #f59e0b;
+@st-p-critical:    #ef4444;
+
+// --- Shared primitives -------------------------------------------------------
+
+.SupportBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 11px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.7;
+  white-space: nowrap;
+  text-transform: uppercase;
+  color: #fff;
+  background: @st-closed;
+
+  .icon {
+    font-size: 10px;
+  }
 }
 
-.TicketList {
-  list-style: none;
-  padding: 0;
+// Status colours
+.SupportBadge--new       { background: @st-new; }
+.SupportBadge--answered  { background: @st-answered; }
+.SupportBadge--pending   { background: @st-pending; }
+.SupportBadge--resolved  { background: @st-resolved; }
+.SupportBadge--closed    { background: @st-closed; }
+
+// Priority chips (soft / outlined look)
+.SupportPriority {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+  line-height: 1.7;
+  white-space: nowrap;
+  background: transparent;
+  border: 1.5px solid currentColor;
+
+  &::before {
+    content: '';
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+}
+.SupportPriority--low      { color: @st-p-low; }
+.SupportPriority--medium   { color: @st-p-medium; }
+.SupportPriority--high     { color: @st-p-high; }
+.SupportPriority--critical { color: @st-p-critical; }
+
+.SupportChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--muted-color);
+  white-space: nowrap;
+
+  .icon { font-size: 11px; }
+}
+
+// --- Page shell --------------------------------------------------------------
+
+.SupportPage,
+.TicketPage {
+  .Page-hero {
+    margin-bottom: @st-gap;
+  }
+}
+
+.SupportHero {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 22px 24px;
+  border-radius: @st-radius;
+  background: linear-gradient(120deg, fade(@st-accent, 92%) 0%, #6d28d9 100%);
+  color: #fff;
+  box-shadow: 0 10px 26px -14px fade(#1e1b4b, 70%);
+  margin-bottom: @st-gap;
+
+  @media @phone {
+    padding: 18px;
+  }
+}
+
+.SupportHero-main {
+  min-width: 0;
+}
+
+.SupportHero-title {
+  margin: 0 0 4px;
+  font-size: 24px;
+  font-weight: 800;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  .icon { opacity: 0.85; }
+}
+
+.SupportHero-subtitle {
   margin: 0;
-}
-
-.TicketList-item {
-  border-bottom: 1px solid var(--control-bg);
-  padding: 12px 0;
-}
-
-.TicketStatus {
-  display: inline-block;
-  margin-left: 10px;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-  background: var(--muted-color);
+  font-size: 14px;
+  opacity: 0.88;
   color: #fff;
 }
 
-.TicketStatus--new { background: #3b82f6; }
-.TicketStatus--answered { background: #10b981; }
-.TicketStatus--pending { background: #f59e0b; }
-.TicketStatus--resolved { background: #6366f1; }
-.TicketStatus--closed { background: #6b7280; }
+// --- Stat cards --------------------------------------------------------------
 
-.TicketPage-meta {
-  margin-bottom: 16px;
+.SupportStats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: @st-gap;
 }
 
+.SupportStat {
+  padding: 14px 16px;
+  border-radius: @st-radius-sm;
+  background: var(--control-bg);
+  border: 1px solid var(--control-bg);
+}
+
+.SupportStat-value {
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1.1;
+  color: var(--text-color);
+}
+
+.SupportStat-label {
+  margin-top: 2px;
+  font-size: 12.5px;
+  color: var(--muted-color);
+}
+
+// --- Tabs / filters ----------------------------------------------------------
+
+.SupportTabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: @st-gap;
+}
+
+.SupportTab {
+  appearance: none;
+  border: 1px solid transparent;
+  background: var(--control-bg);
+  color: var(--muted-color);
+  padding: 7px 16px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: @st-transition;
+
+  &:hover {
+    color: var(--text-color);
+  }
+
+  &.active {
+    background: @st-accent;
+    color: #fff;
+  }
+}
+
+.SupportTab-count {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: fade(#000, 8%);
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.SupportTab.active .SupportTab-count {
+  background: fade(#fff, 25%);
+}
+
+.TicketPage-hero {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+  word-break: break-word;
+
+  .icon {
+    color: var(--muted-color);
+  }
+}
+
+// --- Ticket list -------------------------------------------------------------
+
+.SupportList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.SupportCard {
+  position: relative;
+  display: block;
+  padding: 16px 18px 16px 22px;
+  border-radius: @st-radius-sm;
+  background: var(--control-bg);
+  border: 1px solid transparent;
+  color: inherit;
+  text-decoration: none;
+  overflow: hidden;
+  transition: transform @st-transition, box-shadow @st-transition, border-color @st-transition;
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: @st-closed;
+  }
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px -14px fade(#0f172a, 70%);
+    border-color: fade(@st-accent, 35%);
+    text-decoration: none;
+    color: inherit;
+  }
+}
+
+// Accent bar per status
+.SupportCard--new::before       { background: @st-new; }
+.SupportCard--answered::before  { background: @st-answered; }
+.SupportCard--pending::before   { background: @st-pending; }
+.SupportCard--resolved::before  { background: @st-resolved; }
+.SupportCard--closed::before    { background: @st-closed; }
+
+.SupportCard-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.SupportCard-title {
+  margin: 0;
+  font-size: 15.5px;
+  font-weight: 700;
+  color: var(--text-color);
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+.SupportCard-badges {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.SupportCard-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  margin-top: 10px;
+}
+
+.SupportCard-excerpt {
+  margin: 8px 0 0;
+  font-size: 13.5px;
+  color: var(--muted-color);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.SupportEmpty {
+  text-align: center;
+  padding: 56px 20px;
+  border-radius: @st-radius-sm;
+  background: var(--control-bg);
+
+  .SupportEmpty-icon {
+    font-size: 40px;
+    color: var(--muted-color);
+    opacity: 0.55;
+    margin-bottom: 14px;
+  }
+
+  .SupportEmpty-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-color);
+  }
+
+  .SupportEmpty-text {
+    margin-top: 4px;
+    color: var(--muted-color);
+    font-size: 13.5px;
+  }
+}
+
+// --- Ticket detail -----------------------------------------------------------
+
+.TicketHeader {
+  padding: 18px 20px;
+  border-radius: @st-radius-sm;
+  background: var(--control-bg);
+  margin-bottom: @st-gap;
+}
+
+.TicketHeader-title {
+  margin: 0 0 12px;
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text-color);
+  word-break: break-word;
+}
+
+.TicketHeader-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.TicketMessage {
+  display: flex;
+  gap: 14px;
+  padding: 18px 20px;
+  border-radius: @st-radius-sm;
+  background: var(--control-bg);
+  border-left: 4px solid @st-accent;
+  margin-bottom: @st-gap;
+}
+
+.TicketAvatar {
+  flex-shrink: 0;
+
+  img, .Avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: block;
+  }
+}
+
+.TicketMessage-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.TicketMessage-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  font-size: 13.5px;
+
+  .TicketMessage-author {
+    font-weight: 700;
+    color: var(--text-color);
+  }
+
+  .TicketMessage-time {
+    color: var(--muted-color);
+    font-size: 12.5px;
+  }
+}
+
+.TicketMessage-text {
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.6;
+  color: var(--text-color);
+}
+
+.TicketAttachment {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 8px 14px;
+  border-radius: @st-radius-sm;
+  background: fade(@st-accent, 10%);
+  color: @st-accent;
+  font-size: 13px;
+  font-weight: 600;
+
+  &:hover { text-decoration: none; }
+}
+
+// Replies timeline
+.TicketReplies {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: @st-gap;
+}
+
+.TicketReply {
+  display: flex;
+  gap: 14px;
+  padding: 16px 18px;
+  border-radius: @st-radius-sm;
+  background: var(--control-bg);
+  border-left: 4px solid transparent;
+
+  &.is-staff {
+    background: fade(@st-accent, 7%);
+    border-left-color: @st-accent;
+  }
+}
+
+.TicketReply-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.TicketReply-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  font-size: 13.5px;
+
+  .TicketReply-author {
+    font-weight: 700;
+    color: var(--text-color);
+  }
+
+  .TicketReply-time {
+    color: var(--muted-color);
+    font-size: 12.5px;
+  }
+}
+
+.TicketReply-text {
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.6;
+  margin: 0;
+  color: var(--text-color);
+}
+
+.TicketStaffTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  background: @st-accent;
+  color: #fff;
+}
+
+// Reply form
 .TicketReplyForm {
-  margin-top: 24px;
+  padding: 18px 20px;
+  border-radius: @st-radius-sm;
+  background: var(--control-bg);
+
+  .FormControl {
+    margin-bottom: 12px;
+  }
 }
 
-.TicketReplyForm textarea {
-  margin-bottom: 10px;
+.TicketReplyForm-title {
+  margin: 0 0 12px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-color);
+}
+
+// Staff control panel
+.TicketStaffPanel {
+  margin-top: @st-gap;
+  padding: 18px 20px;
+  border-radius: @st-radius-sm;
+  background: var(--control-bg);
+  border: 1px dashed fade(@st-accent, 45%);
+}
+
+.TicketStaffPanel-title {
+  margin: 0 0 14px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-color);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.TicketStaffGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.TicketStaffField {
+  label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--muted-color);
+  }
+}
+
+.TicketStaffActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.TicketClosedNote {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  border-radius: @st-radius-sm;
+  background: fade(@st-resolved, 10%);
+  color: var(--text-color);
+  font-size: 13.5px;
+}
+
+// --- Create ticket modal -----------------------------------------------------
+
+.CreateTicketModal {
+  .Modal-body { padding: 4px 0; }
+
+  .Form-group > label {
+    font-weight: 600;
+  }
+
+  .TicketCategoryHint {
+    margin-top: 6px;
+    font-size: 12.5px;
+    color: var(--muted-color);
+  }
+
+  .TicketUploadRow {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .TicketUploadStatus {
+    font-size: 12.5px;
+    color: var(--muted-color);
+  }
+
+  .TicketUploadDone {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: @st-answered;
+  }
+}
+
+// --- Loading / error states --------------------------------------------------
+
+.SupportLoading {
+  padding: 40px 0;
+  text-align: center;
+}
+
+// --- Dark-mode tweaks --------------------------------------------------------
+
+@media (prefers-color-scheme: dark) {
+  .SupportStat,
+  .SupportCard,
+  .TicketHeader,
+  .TicketMessage,
+  .TicketReply,
+  .TicketReplyForm,
+  .TicketStaffPanel,
+  .SupportEmpty {
+    border-color: fade(#fff, 8%);
+  }
 }

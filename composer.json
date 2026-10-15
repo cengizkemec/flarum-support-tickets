@@ -1,6 +1,6 @@
 {
   "name": "cengizkemec/support-tickets",
-  "description": "HESK-style Support Ticket System for Flarum 2.0 (v1.0.8)",
+  "description": "HESK-style Support Ticket System for Flarum 2.0 (v1.1.0)",
   "type": "flarum-extension",
   "license": "MIT",
   "require": {

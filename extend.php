@@ -14,14 +14,17 @@ use Cengizkemec\SupportTickets\Notification\TicketReplyBlueprint;
 use Flarum\Api\Resource\ForumResource;
 use Flarum\Api\Schema;
 use Flarum\Extend;
+use Flarum\User\User;
 use Illuminate\Console\Scheduling\Event;
+use Illuminate\Database\ConnectionInterface;
 use Tobyz\JsonApiServer\Context;
 
 return [
     (new Extend\Frontend('forum'))
         ->js(__DIR__.'/js/dist/forum.js')
         ->css(__DIR__.'/less/forum.less')
-        ->route('/support', 'support'),
+        ->route('/support', 'support')
+        ->route('/support/{id}', 'support.ticket'),
 
     (new Extend\Frontend('admin'))
         ->js(__DIR__.'/js/dist/admin.js'),
@@ -37,13 +40,50 @@ return [
     new Extend\ApiResource(TicketReplyResource::class),
 
     // Expose staff capabilities to the frontend as forum attributes:
-    // app.forum.attribute('canSupportViewAll') / ('canSupportManage').
+    // app.forum.attribute('canSupportViewAll') / ('canSupportManage') / ('supportStaff').
     (new Extend\ApiResource(ForumResource::class))
         ->fields(fn () => [
             Schema\Boolean::make('canSupportViewAll')
                 ->get(fn ($model, Context $context) => $context->getActor()->can('support.viewAll')),
             Schema\Boolean::make('canSupportManage')
                 ->get(fn ($model, Context $context) => $context->getActor()->can('support.manage')),
+            Schema\Arr::make('supportStaff')
+                ->get(function ($model, Context $context) {
+                    $actor = $context->getActor();
+
+                    if (! $actor->can('support.viewAll') && ! $actor->can('support.manage')) {
+                        return [];
+                    }
+
+                    $groupIds = [];
+                    try {
+                        $groupIds = resolve(ConnectionInterface::class)
+                            ->table('group_permission')
+                            ->where('permission', 'support.viewAll')
+                            ->pluck('group_id')
+                            ->all();
+                    } catch (\Throwable $e) {
+                        // Ignore: fall back to administrators only.
+                    }
+
+                    // Administrators always have access.
+                    $groupIds[] = 1;
+                    $groupIds = array_values(array_unique(array_map('intval', $groupIds)));
+
+                    return User::query()
+                        ->whereHas('groups', fn ($q) => $q->whereIn('groups.id', $groupIds))
+                        ->orderBy('username')
+                        ->limit(200)
+                        ->get()
+                        ->map(fn (User $user) => [
+                            'id' => (int) $user->id,
+                            'username' => $user->username,
+                            'displayName' => $user->display_name,
+                            'avatarUrl' => $user->avatar_url,
+                        ])
+                        ->values()
+                        ->all();
+                }),
         ]),
 
     (new Extend\Policy())

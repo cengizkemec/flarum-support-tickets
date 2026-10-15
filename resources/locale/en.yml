@@ -11,7 +11,8 @@ cengizkemec-support:
       manage: Manage support tickets
   forum:
     nav_item: Support
-    title: Support Tickets
+    title: Support Center
+    subtitle: Create a ticket and our team will get back to you as soon as possible.
     new_ticket: New Ticket
     my_tickets: My Tickets
     status:
@@ -25,14 +26,46 @@ cengizkemec-support:
       medium: Medium
       high: High
       critical: Critical
+    priority_label: Priority
+    tab_all: All
+    tab_open: Open
+    tab_closed: Closed
+    stat_total: Total
+    stat_open: Open
+    stat_closed: Closed
     category: Category
+    category_none: Select a category
     subject: Subject
+    subject_placeholder: Briefly describe your issue
     message: Message
+    message_placeholder: Explain your issue in detail...
     attachment: Attachment
+    upload: Upload
+    uploading: Uploading...
+    upload_done: Uploaded
+    upload_failed: Upload failed. Please try again.
     create: Create Ticket
     reply: Reply
+    reply_placeholder: Write a reply...
+    send_reply: Send Reply
     assigned_to: Assigned to
-    no_tickets: You have no tickets yet.
+    unassigned: Unassigned
+    staff: Staff
+    staff_panel: Staff Actions
+    status_label: Status
+    reopen: Reopen
+    mark_resolved: Mark Resolved
+    close_ticket: Close
+    closed_note: This ticket is closed. Reopen it to continue the conversation.
+    unknown_user: Unknown user
+    empty_title: No tickets yet
+    empty_text: When you open a support ticket it will show up here.
+    error_load: Failed to load the ticket.
+    error_not_found: Ticket not found or access denied.
+    error_reply: Failed to send the reply.
+    error_status: Failed to update the status.
+    error_assign: Failed to assign the ticket.
+    error_create: Failed to create the ticket.
   email:
     new_ticket_subject: "New support ticket: {subject}"
     reply_subject: "New reply on: {subject}"

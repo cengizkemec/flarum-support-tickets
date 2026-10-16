@@ -10,6 +10,18 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class TicketFormField extends AbstractModel
 {
+    protected static function booted(): void
+    {
+        parent::booted();
+        static::saving(function (self $model) {
+            if ($model->name === null || trim((string)$model->name) === '') {
+                $label = (string) ($model->label ?? '');
+                $slug = strtolower(trim(preg_replace('/[^a-zA-Z0-9]+/', '_', $label), '_'));
+                $model->name = $slug !== '' ? $slug : ('field_' . time());
+            }
+        });
+    }
+
     protected $table = 'ticket_form_fields';
     protected $guarded = [];
 

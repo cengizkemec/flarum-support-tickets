@@ -4,6 +4,7 @@ use Cengizkemec\SupportTickets\Access\TicketPolicy;
 use Cengizkemec\SupportTickets\Api\Controller\DownloadAttachmentController;
 use Cengizkemec\SupportTickets\Api\Controller\UploadAttachmentController;
 use Cengizkemec\SupportTickets\Api\Resource\TicketCategoryResource;
+use Cengizkemec\SupportTickets\Api\Resource\SupportDepartmentResource;
 use Cengizkemec\SupportTickets\Api\Resource\TicketFormFieldResource;
 use Cengizkemec\SupportTickets\Api\Resource\TicketReplyResource;
 use Cengizkemec\SupportTickets\Api\Resource\TicketResource;
@@ -44,6 +45,7 @@ return [
 
     new Extend\ApiResource(TicketResource::class),
     new Extend\ApiResource(TicketCategoryResource::class),
+    new Extend\ApiResource(SupportDepartmentResource::class),
     new Extend\ApiResource(TicketFormFieldResource::class),
     new Extend\ApiResource(TicketReplyResource::class),
 

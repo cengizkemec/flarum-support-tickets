@@ -16,6 +16,18 @@ use Psr\Http\Server\RequestHandlerInterface;
 
 class DownloadAttachmentController implements RequestHandlerInterface
 {
+    /**
+     * Raster images are safe to render inline: they cannot execute script and
+     * are served with `X-Content-Type-Options: nosniff`. Everything else is
+     * forced to download.
+     */
+    private const INLINE_MIME = [
+        'image/jpeg',
+        'image/png',
+        'image/gif',
+        'image/webp',
+    ];
+
     public function __construct(protected Paths $paths)
     {
     }
@@ -60,12 +72,15 @@ class DownloadAttachmentController implements RequestHandlerInterface
 
         $stream = new Stream($fullPath, 'r');
         $mime = mime_content_type($fullPath) ?: 'application/octet-stream';
+        $disposition = in_array($mime, self::INLINE_MIME, true) ? 'inline' : 'attachment';
 
         return new Response($stream, 200, [
             'Content-Type' => $mime,
-            'Content-Disposition' => 'attachment; filename="' . basename($filename) . '"',
+            'Content-Disposition' => $disposition . '; filename="' . basename($filename) . '"',
             'Content-Length' => (string) filesize($fullPath),
             'X-Content-Type-Options' => 'nosniff',
+            // Neutralise the file if it is ever navigated to directly.
+            'Content-Security-Policy' => "default-src 'none'; sandbox",
             'Cache-Control' => 'private, no-cache',
         ]);
     }

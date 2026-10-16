@@ -29,7 +29,11 @@ class TicketReplyBlueprint implements BlueprintInterface, MailableInterface, Ale
 
     public function getData(): mixed
     {
-        return ['replyId' => $this->reply->id];
+        return [
+            'ticketId' => $this->reply->ticket_id,
+            'replyId' => $this->reply->id,
+            'slug' => $this->reply->ticket ? $this->reply->ticket->slug() : '',
+        ];
     }
 
     public static function getType(): string

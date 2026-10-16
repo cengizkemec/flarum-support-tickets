@@ -9,11 +9,16 @@
 @st-gap:           18px;
 @st-transition:    0.18s ease;
 
-@st-accent:        #4f46e5; // indigo
+// The accent is the forum's own primary colour, so the support centre blends
+// into the rest of the board instead of looking like a separate product.
+@st-accent:        var(--primary-color);
+
+// Status colours stay fixed: a red or amber status is a signal, not branding,
+// and must be readable on every theme.
 @st-new:           #2563eb; // blue
 @st-answered:      #059669; // green
 @st-pending:       #d97706; // amber
-@st-resolved:      #7c3aed; // violet
+@st-resolved:      #0d9488; // teal
 @st-closed:        #64748b; // slate
 
 @st-p-low:         #10b981;
@@ -97,6 +102,19 @@
   }
 }
 
+// Flarum's PageStructure always renders `.Page-sidebar`, even when the page
+// provides no sidebar. On desktop an empty one still reserves a full sidebar
+// column plus the flex gap, which pushed our content to the right while the
+// hero stayed full-width (so nothing lined up). Hide it when it is empty.
+.SupportPage,
+.TicketPage {
+  .Page-sidebar:empty {
+    display: none;
+  }
+}
+
+// The hero is wrapped in a `.container` (same as core's Hero component) so it
+// lines up with the page content instead of bleeding across the whole viewport.
 .SupportHero {
   display: flex;
   flex-wrap: wrap;
@@ -105,13 +123,55 @@
   gap: 16px;
   padding: 22px 24px;
   border-radius: @st-radius;
-  background: linear-gradient(120deg, fade(@st-accent, 92%) 0%, #6d28d9 100%);
-  color: #fff;
-  box-shadow: 0 10px 26px -14px fade(#1e1b4b, 70%);
-  margin-bottom: @st-gap;
+  background: var(--primary-color);
+  background-image: radial-gradient(
+    130% 170% at 10% 0%,
+    color-mix(in srgb, var(--contrast-color) 16%, transparent) 0%,
+    transparent 62%
+  );
+  color: var(--contrast-color);
+  box-shadow: 0 1px 2px var(--shadow-color);
 
   @media @phone {
     padding: 18px;
+  }
+}
+
+// Guests: invite them to sign in / register instead of showing an error.
+.SupportGuest {
+  text-align: center;
+  padding: 56px 24px;
+  border-radius: @st-radius-sm;
+  background: var(--control-bg);
+
+  .SupportGuest-icon {
+    font-size: 38px;
+    color: @st-accent;
+    opacity: 0.75;
+    margin-bottom: 16px;
+  }
+
+  .SupportGuest-title {
+    margin: 0;
+    font-size: 19px;
+    font-weight: 800;
+    color: var(--text-color);
+  }
+
+  .SupportGuest-text {
+    max-width: 520px;
+    margin: 8px auto 0;
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--muted-color);
+  }
+
+  .SupportGuest-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 22px;
   }
 }
 
@@ -123,7 +183,7 @@
   margin: 0 0 4px;
   font-size: 24px;
   font-weight: 800;
-  color: #fff;
+  color: var(--contrast-color);
   display: flex;
   align-items: center;
   gap: 10px;
@@ -135,7 +195,7 @@
   margin: 0;
   font-size: 14px;
   opacity: 0.88;
-  color: #fff;
+  color: var(--contrast-color);
 }
 
 // --- Stat cards --------------------------------------------------------------
@@ -150,8 +210,9 @@
 .SupportStat {
   padding: 14px 16px;
   border-radius: @st-radius-sm;
-  background: var(--control-bg);
+  background: var(--body-bg);
   border: 1px solid var(--control-bg);
+  box-shadow: 0 1px 2px var(--shadow-color);
 }
 
 .SupportStat-value {
@@ -190,11 +251,13 @@
 
   &:hover {
     color: var(--text-color);
+    border-color: color-mix(in srgb, var(--primary-color) 45%, transparent);
   }
 
   &.active {
-    background: @st-accent;
-    color: #fff;
+    background: var(--primary-color);
+    color: var(--contrast-color);
+    border-color: var(--primary-color);
   }
 }
 
@@ -209,7 +272,21 @@
 }
 
 .SupportTab.active .SupportTab-count {
-  background: fade(#fff, 25%);
+  background: color-mix(in srgb, var(--contrast-color) 25%, transparent);
+}
+
+.TicketPage-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted-color);
+
+  &:hover {
+    color: @st-accent;
+  }
 }
 
 .TicketPage-hero {
@@ -260,11 +337,18 @@
   }
 
   &:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 8px 20px -14px fade(#0f172a, 70%);
-    border-color: fade(@st-accent, 35%);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 22px -14px var(--shadow-color);
+    border-color: color-mix(in srgb, var(--primary-color) 55%, transparent);
+    background: color-mix(in srgb, var(--primary-color) 10%, transparent);
     text-decoration: none;
     color: inherit;
+
+    // Make the hover state unmistakable (the old 1px lift + faint shadow was
+    // invisible on dark backgrounds).
+    .SupportCard-title {
+      color: @st-accent;
+    }
   }
 }
 
@@ -425,12 +509,116 @@
   margin-top: 12px;
   padding: 8px 14px;
   border-radius: @st-radius-sm;
-  background: fade(@st-accent, 10%);
+  background: color-mix(in srgb, var(--primary-color) 10%, transparent);
   color: @st-accent;
   font-size: 13px;
   font-weight: 600;
 
   &:hover { text-decoration: none; }
+}
+
+// Inline image attachment inside a ticket message or reply.
+.TicketAttachment-image {
+  display: inline-block;
+  margin-top: 12px;
+  line-height: 0;
+
+  img {
+    display: block;
+    max-width: 100%;
+    max-height: 420px;
+    border-radius: @st-radius-sm;
+    border: 1px solid var(--control-bg);
+  }
+
+  &:hover { text-decoration: none; }
+}
+
+// --- Attachment picker (paste / file input) ----------------------------------
+
+.AttachmentRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.AttachmentHint {
+  margin: -6px 0 12px;
+  font-size: 12px;
+  color: var(--muted-color);
+}
+
+.AttachmentStatus {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--muted-color);
+}
+
+.AttachmentPreview {
+  position: relative;
+  display: inline-block;
+  line-height: 0;
+}
+
+.AttachmentPreview-image {
+  display: block;
+  max-width: 240px;
+  max-height: 170px;
+  border-radius: @st-radius-sm;
+  border: 1px solid var(--control-bg);
+}
+
+.AttachmentChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px 6px 14px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--primary-color) 10%, transparent);
+  color: @st-accent;
+  font-size: 13px;
+  font-weight: 600;
+  max-width: 100%;
+  word-break: break-all;
+}
+
+.AttachmentRemove {
+  appearance: none;
+  border: 0;
+  padding: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  line-height: 1;
+  flex-shrink: 0;
+  background: color-mix(in srgb, var(--primary-color) 22%, transparent);
+  color: @st-accent;
+
+  &:hover {
+    background: color-mix(in srgb, var(--primary-color) 38%, transparent);
+  }
+}
+
+// The thumbnail floats its remove button on the corner.
+.AttachmentPreview .AttachmentRemove {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: fade(#0f172a, 65%);
+  color: #fff;
+
+  &:hover {
+    background: fade(#0f172a, 85%);
+  }
 }
 
 // Replies timeline
@@ -450,7 +638,7 @@
   border-left: 4px solid transparent;
 
   &.is-staff {
-    background: fade(@st-accent, 7%);
+    background: color-mix(in srgb, var(--primary-color) 7%, transparent);
     border-left-color: @st-accent;
   }
 }
@@ -497,8 +685,8 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.03em;
-  background: @st-accent;
-  color: #fff;
+  background: var(--primary-color);
+  color: var(--contrast-color);
 }
 
 // Reply form
@@ -525,7 +713,7 @@
   padding: 18px 20px;
   border-radius: @st-radius-sm;
   background: var(--control-bg);
-  border: 1px dashed fade(@st-accent, 45%);
+  border: 1px dashed color-mix(in srgb, var(--primary-color) 45%, transparent);
 }
 
 .TicketStaffPanel-title {
@@ -545,12 +733,18 @@
 }
 
 .TicketStaffField {
+  min-width: 0;
+
   label {
     display: block;
     margin-bottom: 6px;
     font-size: 12.5px;
     font-weight: 600;
     color: var(--muted-color);
+  }
+
+  .FormControl {
+    max-width: 100%;
   }
 }
 
@@ -561,24 +755,80 @@
   margin-top: 16px;
 }
 
+// On a phone the action buttons used to be clipped by the panel padding. Let
+// them take the full width and wrap instead.
+@media @phone {
+  .TicketStaffPanel {
+    padding: 16px;
+  }
+
+  .TicketStaffGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .TicketStaffActions,
+  .TicketStaffActions-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+
+    .Button {
+      width: 100%;
+      justify-content: center;
+      margin: 0;
+    }
+  }
+}
+
 .TicketClosedNote {
   display: flex;
   align-items: center;
-  gap: 10px;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
   padding: 14px 18px;
   border-radius: @st-radius-sm;
-  background: fade(@st-resolved, 10%);
+  background: color-mix(in srgb, @st-resolved 10%, transparent);
   color: var(--text-color);
   font-size: 13.5px;
 }
 
+.TicketClosedNote-text {
+  margin: 0;
+}
+
 // --- Create ticket modal -----------------------------------------------------
 
+// The default "large" modal caps at 800px, which leaves the create form feeling
+// cramped on desktop. Give the form (and therefore every field) more room.
+@media (min-width: 992px) {
+  .Modal.CreateTicketModal {
+    max-width: 1000px;
+  }
+}
+
 .CreateTicketModal {
-  .Modal-body { padding: 4px 0; }
+  // Keep the tighter vertical rhythm, but restore the horizontal inset that core
+  // provides (25px 30px) so the labels and fields don't hug the modal edges.
+  .Modal-body { padding: 4px 30px; }
+
+  // Tighter, more readable rhythm between the labelled rows.
+  .Form {
+    --gap: 20px;
+  }
 
   .Form-group > label {
-    font-weight: 600;
+    display: block;
+    font-size: 13.5px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    color: var(--text-color);
+  }
+
+  // Make sure every control spans the full width of the modal.
+  .Form-group > .FormControl {
+    width: 100%;
   }
 
   .TicketCategoryHint {
@@ -593,20 +843,6 @@
     gap: 12px;
     flex-wrap: wrap;
   }
-
-  .TicketUploadStatus {
-    font-size: 12.5px;
-    color: var(--muted-color);
-  }
-
-  .TicketUploadDone {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 12.5px;
-    font-weight: 600;
-    color: @st-answered;
-  }
 }
 
 // --- Loading / error states --------------------------------------------------
@@ -616,17 +852,122 @@
   text-align: center;
 }
 
-// --- Dark-mode tweaks --------------------------------------------------------
+// Flarum itself switches between light and dark, and every colour above is
+// pulled from its CSS variables, so the support centre follows the forum's
+// theme automatically — no separate dark-mode block needed.
 
-@media (prefers-color-scheme: dark) {
-  .SupportStat,
-  .SupportCard,
-  .TicketHeader,
-  .TicketMessage,
-  .TicketReply,
-  .TicketReplyForm,
-  .TicketStaffPanel,
-  .SupportEmpty {
-    border-color: fade(#fff, 8%);
+// --- Clickable users and ticket details --------------------------------------
+
+.TicketUserLink {
+  color: inherit;
+  font-weight: 600;
+
+  &:hover,
+  &:focus {
+    color: var(--primary-color);
+    text-decoration: none;
   }
+}
+
+.TicketFields {
+  margin-bottom: @st-gap;
+  padding: 16px 18px;
+  border-radius: @st-radius-sm;
+  background: var(--control-bg);
+}
+
+.TicketFields-title {
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-color);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.TicketFields-list {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.TicketField {
+  min-width: 0;
+}
+
+.TicketField-label {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--muted-color);
+}
+
+.TicketField-value {
+  margin: 2px 0 0;
+  font-size: 14px;
+  color: var(--text-color);
+  word-break: break-word;
+}
+
+// Choice controls on the "new ticket" form.
+.TicketChoices {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.TicketChoice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-color);
+  cursor: pointer;
+  margin: 0;
+
+  input {
+    margin: 0;
+  }
+}
+
+.TicketFormField.is-required > label {
+  font-weight: 700;
+}
+
+.TicketFormField-required {
+  color: var(--error-color);
+}
+
+// --- Support notification toggle ---------------------------------------------
+
+.SupportNotifToggle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  margin-bottom: @st-gap;
+  padding: 12px 16px;
+  border-radius: @st-radius-sm;
+  background: var(--control-bg);
+  border: 1px solid var(--control-bg);
+
+  .Switch {
+    margin: 0;
+  }
+}
+
+.SupportNotifToggle-help {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.SupportNotifToggle-note {
+  flex-basis: 100%;
+  font-size: 12.5px;
+  color: var(--muted-color);
 }

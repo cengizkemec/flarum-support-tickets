@@ -2,6 +2,7 @@ import Component from 'flarum/common/Component';
 import Link from 'flarum/common/components/Link';
 import app from 'flarum/forum/app';
 import { formatDateTime } from '../utils/format';
+import { ticketUrl } from '../utils/ticketUrl';
 
 const T = (key: string, params?: any) => app.translator.trans('cengizkemec-support.forum.' + key, params);
 
@@ -41,7 +42,7 @@ export default class TicketList extends Component {
 
     return (
       <li key={ticket.id()}>
-        <Link className={'SupportCard SupportCard--' + status} href={app.route('support.ticket', { id: ticket.id() })}>
+        <Link className={'SupportCard SupportCard--' + status} href={ticketUrl(ticket)}>
           <div className="SupportCard-top">
             <h3 className="SupportCard-title">{ticket.subject()}</h3>
             <div className="SupportCard-badges">

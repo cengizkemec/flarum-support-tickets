@@ -28,7 +28,13 @@ class NewTicketBlueprint implements BlueprintInterface, MailableInterface, Alert
 
     public function getData(): mixed
     {
-        return null;
+        // Carried through to the frontend so the notification can always link
+        // to its ticket, even before the subject model is in the store. The
+        // slug lets the frontend build the pretty /support/{id}/{slug} URL.
+        return [
+            'ticketId' => $this->ticket->id,
+            'slug' => $this->ticket->slug(),
+        ];
     }
 
     public static function getType(): string

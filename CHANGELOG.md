@@ -1,5 +1,116 @@
 # Changelog
 
+## 1.1.2 — 2026-10-16
+
+Verified end-to-end on a live Flarum 2.0.1 installation (PHP 8.4, MariaDB), including a
+33-check automated security regression suite (**33 PASS / 0 FAIL**).
+
+### Fixed (notifications)
+
+- **Ticket notifications were rendered as blank rows.** The server created `newTicket` and
+  `ticketReply` notifications, but no forum-side notification component was registered for
+  those types. Flarum renders `null` for an unknown type, so the row had no icon, no message
+  and — critically — **no link**, which is why tapping a notification on mobile navigated
+  nowhere useful and clicking one on desktop did nothing.
+  `js/src/forum/components/TicketNotifications.tsx` now provides `NewTicketNotification`
+  (headset icon) and `TicketReplyNotification` (reply icon), registered with
+  `new Extend.Notification()`. Each row shows the sender, the action text, a relative date
+  and an excerpt of the ticket subject.
+- Both new ticket types can now be enabled/disabled per user in the notification preferences
+  grid (`Admin → Settings` and the user's own notification settings).
+- Notification payloads now carry the ticket id (`ticketId`, plus `replyId` for replies), so
+  the link keeps working even if the subject model has not been pushed into the store yet.
+
+### Fixed (guests and navigation)
+
+- **The "Log in" button on the guest `/support` page did nothing.** `LogInModal` and
+  `SignUpModal` are chunked core modules; they were imported statically, so the module was
+  not in the bundle yet and `app.modal.show(undefined)` failed silently. Both modals are now
+  loaded with a lazy `import()`, which is the mechanism Flarum's chunk loader supports.
+  The guest page now reliably opens the login and registration modals.
+- **"Destek" (Support) is now always visible in the left sidebar** on the discussion index,
+  including for guests, so the support centre is discoverable without logging in.
+- **No way back from a ticket.** A "Back to Support" link now sits above the ticket subject on
+  every ticket page. Closed tickets additionally show a note with a "Back to Support" button
+  in place of the reply form (staff keep the reply form so they can reopen).
+- **Wrong browser-tab title.** `/support` and ticket pages never set the document title, so
+  the tab kept whatever the previous page had (e.g. "All Discussions"). The support centre now
+  sets its own title and each ticket page uses its subject, e.g.
+  `Ses ve mikrofon sorunu - Forum Name`.
+
+### Added (custom ticket form fields)
+
+- **HESK-style custom form fields, managed from the admin panel.** The settings page gained a
+  "Ticket form fields" manager (create, edit, toggle active, delete) with the same loading,
+  empty and error states as the category manager.
+  - Types: `text`, `textarea`, `number`, `email`, `url`, `date`, `select`, `radio`, `checkbox`.
+  - Fields can be **global** (shown for every ticket) or **scoped to one category**.
+  - Per-field `required` and `active` flags plus a `position` for ordering.
+  - `select`, `radio` and `checkbox` take a choices list entered one per line in the admin
+    (stored as JSON in `ticket_form_fields.options`).
+- **The "New Ticket" modal renders the configured fields.** Radio groups render as a vertical
+  `role="radiogroup"`, checkboxes as a multi-select group, and `select`/`textarea`/`number`
+  inputs use the standard Flarum form controls. Field values ride along on ticket creation.
+- **Server-side validation.** `Support\TicketCustomFields::sanitize()` only keeps values whose
+  field is active *and* applicable to the ticket's category, coerces each value to the shape
+  its type expects (numeric coercion, `FILTER_VALIDATE_EMAIL` / `_URL`, `YYYY-MM-DD` date
+  check, membership in the choices list for `select`/`radio`), and truncates free text to
+  5 000 characters — so crafted `POST`s cannot write garbage into `tickets.custom_fields`.
+- **Answers are shown inside the ticket** as label/value rows
+  (`Support\TicketCustomFields::present()`). A field that is deleted later keeps its stored
+  value visible under a generic label, so no ticket history is lost.
+- New migration `2026_10_18_000001_create_ticket_form_fields_table.php` plus
+  `2026_10_18_000002_add_custom_fields_to_tickets_table.php` (JSON column on `tickets`).
+
+### Added (support team, URLs, PWA)
+
+- **Support team group setting.** The admin panel now lets you pick the group that is "the
+  support team". `Support\TicketStaff` resolves the team from that group (falling back to
+  administrators + `support.viewAll` holders when unset) and **hands each brand-new,
+  unassigned ticket to a team member automatically** (`pickAssignee()` in
+  `TicketResource::creating()`). The team also feeds notifications and the "Assigned to" menu.
+- **Readable ticket URLs.** Ticket links now carry a slug:
+  `/support/18/ses-ve-mikrofon-sorunu`. The route is registered as
+  `/support/{id:\d+}[/{slug}]`, so the bare `/support/18` form keeps working. The slug is
+  generated by `Support\TicketSlug` (server) and `js/src/common/utils/slug.ts` (client) with
+  the same Turkish-aware transliteration (ç→c, ğ→g, ı→i, ö→o, ş→s, ü→u) and NFC normalisation,
+  so both sides always agree. `js/src/forum/utils/ticketUrl.ts` builds the canonical links.
+- **FoF PWA integration.** `PwaServiceProvider` binds a `TicketNotificationBuilder` so push
+  notifications produced by `fof/pwa` link straight to the ticket. The binding is guarded by
+  `class_exists`, so the extension still works on forums without FoF PWA.
+
+### Security
+
+- **`TicketResource::updating()` now restores every protected field** for actors without
+  `support.viewAll` / `support.manage`. Previously only status, priority and assignee were
+  restored, so a non-staff owner could still overwrite the subject, message, attachment,
+  category and the owning user id through a crafted `PATCH`. Verified by the automated suite.
+- **Attachment downloads are hardened.**
+  - Raster images (JPEG/PNG/GIF/WebP) are served `inline` so screenshots display in the
+    ticket view; every other type is forced to download.
+  - `Content-Security-Policy: default-src 'none'; sandbox` is added, so a file that is ever
+    navigated to directly is neutralised by the browser.
+  - `X-Content-Type-Options: nosniff` and `Cache-Control: private, no-cache` remain in place.
+- Upload filename handling re-verified: the stored name is always
+  `Str::random(40) + '.' + <extension derived from the verified MIME>`, and the original name
+  is passed through `basename()` for display only. A crafted `../../name.png` upload is
+  therefore inert (it cannot escape the storage directory) — the security suite asserts this
+  explicitly.
+
+### Added
+
+- **`support-tickets:purge-attachments` console command.** Removes attachments that are no
+  longer referenced by any ticket or reply (uploads that were never submitted, files whose
+  ticket was deleted). Files younger than 24 hours are skipped so an in-flight upload is never
+  deleted. Registered with Flarum's scheduler and runs daily.
+- `js/src/forum/utils/attachments.ts` — shared helpers for uploading an attachment, building
+  its authenticated URL and deciding whether it can be rendered inline.
+
+### Changed
+
+- The create-ticket form was reworked: wider category/subject/priority fields, explicit
+  labels, and a visible hover/focus state on the support list rows.
+
 ## 1.1.1 — 2026-10-16
 
 Verified end-to-end on a live Flarum 2.0.1 installation (PHP 8.4, MariaDB 11).

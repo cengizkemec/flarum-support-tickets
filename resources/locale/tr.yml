@@ -6,6 +6,11 @@ cengizkemec-support:
     auto_close_days_help: "Bu süre boyunca hareket görmeyen biletler otomatik olarak kapatılır. İzin verilen değerler: 1-365."
     email_notifications: E-posta bildirimleri
     email_notifications_help: Bir bilet oluşturulduğunda veya yanıt yazıldığında ilgililere e-posta gönderilir.
+    staff_group: Destek ekibi grubu
+    staff_group_help: "Seçilen grubun üyeleri destek ekibidir. Tüm biletleri görebilir, bildirim alır ve yeni biletler otomatik olarak onlara atanabilir."
+    staff_group_none: "— Yöneticiler ve “Tüm destek biletlerini gör” iznine sahip olanlar —"
+    auto_assign: Yeni biletleri otomatik ata
+    auto_assign_help: Her yeni bilet, en az açık bileti olan destek ekibi üyesine atanır.
     permissions:
       view_all: Tüm destek biletlerini gör
       reply: Destek biletlerine yanıt ver
@@ -31,6 +36,47 @@ cengizkemec-support:
       field_description: Açıklama
       field_active: Etkin
       field_active_help: Etkin olmayan kategoriler kullanıcılar bilet açarken gizlenir.
+    forms:
+      title: Bilet form alanları
+      help: "HESK tarzında bilet formuna kendi alanlarınızı ekleyin. Kullanıcılar bilet açarken bu alanları doldurur ve yanıtlar biletin içinde gösterilir."
+      add: Alan ekle
+      cancel: Vazgeç
+      create: Alan oluştur
+      save: Alanı kaydet
+      edit: Düzenle
+      delete: Sil
+      position: Sıra
+      empty: Henüz özel alan yok. Bilet formunu genişletmek için bir tane ekleyin.
+      load_error: Alanlar yüklenemedi. Lütfen tekrar deneyin.
+      created: Alan oluşturuldu.
+      updated: Alan güncellendi.
+      deleted: Alan silindi.
+      save_error: Alan kaydedilemedi.
+      delete_error: Alan silinemedi.
+      confirm_delete: "{label} alanını silmek istediğinizden emin misiniz?"
+      field_label: Etiket
+      field_label_help: Kullanıcılara bilet formunda gösterilir.
+      field_name: Anahtar
+      field_name_help: "Dahili tanımlayıcı (harf, rakam ve alt çizgi). Boş bırakılırsa etiketten üretilir."
+      field_type: Tür
+      field_options: Seçenekler
+      field_options_help: Her satıra bir seçenek. Seçim kutusu, radyo ve onay kutusu türlerinde kullanılır.
+      field_required: Zorunlu
+      field_category: Uygulanacağı kategori
+      field_category_help: "Alanın her zaman görünmesi için \"Tüm kategoriler\" olarak bırakın veya tek bir kategoriyle sınırlayın."
+      field_active: Etkin
+      field_active_help: Etkin olmayan alanlar bilet formunda gizlenir.
+      category_all: Tüm kategoriler
+      type:
+        text: Kısa metin
+        textarea: Uzun metin
+        number: Sayı
+        email: E-posta
+        url: Bağlantı
+        date: Tarih
+        select: Açılır liste
+        radio: Radyo düğmeleri
+        checkbox: Onay kutuları
   forum:
     nav_item: Destek
     title: Destek Merkezi
@@ -66,6 +112,9 @@ cengizkemec-support:
     uploading: Yükleniyor...
     upload_done: Yüklendi
     upload_failed: Yükleme başarısız oldu. Lütfen tekrar deneyin.
+    upload_too_large: "Dosya çok büyük. En fazla 5 MB yükleyebilirsiniz."
+    attachment_hint: "İpucu: Görseli Ctrl+V ile yapıştırarak ekleyebilirsiniz."
+    remove_attachment: Eki kaldır
     create: Bilet Oluştur
     reply: Yanıtla
     reply_placeholder: Bir yanıt yazın...
@@ -88,23 +137,55 @@ cengizkemec-support:
     error_status: Durum güncellenemedi.
     error_assign: Bilet atanamadı.
     error_create: Bilet oluşturulamadı.
+    error_preferences: Bildirim tercihiniz kaydedilemedi.
+    guest_title: Destek kaydı açmak için giriş yapın
+    guest_text: Destek kaydı oluşturmak ve sürecini takip edebilmek için bir hesabınız olması gerekir. Başlamak için giriş yapın veya ücretsiz bir hesap oluşturun.
+    guest_login: Giriş Yap
+    guest_register: Kayıt Ol
+    back_to_support: Desteğe Dön
+    meta_title_text: Destek
+    details: Ayrıntılar
+    field_required: "Bu alan zorunludur."
+    notifications:
+      label: Destek bildirimleri
+      help: Bir bilet oluşturulduğunda veya yanıtlandığında uyarı ve e-posta alın.
+      on: Destek bildirimleri açık.
+      off: Destek bildirimleri kapalı.
+    notification:
+      new_ticket: "{username} yeni bir destek bileti açtı"
+      ticket_reply: "{username} bir destek bileti'ne yanıt verdi"
+      new_ticket_label: Yeni destek bileti
+      ticket_reply_label: Bilete yanıt
   email:
     new_ticket_subject: "Yeni destek bileti: {subject}"
     reply_subject: "Yeni yanıt: {subject}"
     new_ticket:
-      body: |
-        {opener_display_name} yeni bir destek bileti açtı: "{title}".
+      plain:
+        body: |
+          {opener_display_name} yeni bir destek bileti açtı: "{title}".
 
-        {content}
+          {content}
 
-        {url}
+          Bileti aç: {url}
+      html:
+        body: |
+          {opener_display_name} yeni bir destek bileti açtı: "{title}".
+
+          {content}
+
+          [Bileti aç]({url})
     ticket_reply:
-      body: |
-        {author_display_name}, "{title}" destek biletine yanıt verdi.
+      plain:
+        body: |
+          {author_display_name}, "{title}" destek bileti'ne yanıt verdi.
 
-        {content}
+          {content}
 
-        {url}
-  notification:
-    new_ticket: "Yeni destek bileti oluşturuldu"
-    ticket_reply: "Biletinize yeni yanıt geldi"
+          Bileti aç: {url}
+      html:
+        body: |
+          {author_display_name}, "{title}" destek bileti'ne yanıt verdi.
+
+          {content}
+
+          [Bileti aç]({url})

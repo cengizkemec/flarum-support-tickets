@@ -6,6 +6,11 @@ cengizkemec-support:
     auto_close_days_help: "Tickets that have had no activity for this many days are closed automatically. Allowed values: 1-365."
     email_notifications: Email notifications
     email_notifications_help: Send an email to the people involved when a ticket is created or a reply is posted.
+    staff_group: Support team group
+    staff_group_help: "Members of the selected group are the support team. They can see every ticket, receive notifications, and new tickets can be assigned to them automatically."
+    staff_group_none: "— Administrators and holders of the “View all support tickets” permission —"
+    auto_assign: Auto-assign new tickets
+    auto_assign_help: Hand every new ticket to the support team member with the fewest open tickets.
     permissions:
       view_all: View all support tickets
       reply: Reply to support tickets
@@ -31,6 +36,47 @@ cengizkemec-support:
       field_description: Description
       field_active: Active
       field_active_help: Inactive categories are hidden when users open a ticket.
+    forms:
+      title: Ticket form fields
+      help: "Add your own fields to the ticket form, HESK style. Users fill them in when they open a ticket and the answers are shown inside the ticket."
+      add: Add field
+      cancel: Cancel
+      create: Create field
+      save: Save field
+      edit: Edit
+      delete: Delete
+      position: Order
+      empty: No custom fields yet. Add one to extend the ticket form.
+      load_error: Fields could not be loaded. Please try again.
+      created: Field created.
+      updated: Field updated.
+      deleted: Field deleted.
+      save_error: The field could not be saved.
+      delete_error: The field could not be deleted.
+      confirm_delete: "Are you sure you want to delete the field {label}?"
+      field_label: Label
+      field_label_help: Shown to users on the ticket form.
+      field_name: Key
+      field_name_help: "Internal identifier (letters, numbers and underscores). Generated from the label when left empty."
+      field_type: Type
+      field_options: Choices
+      field_options_help: One choice per line. Used by the select, radio and checkbox types.
+      field_required: Required
+      field_category: Applies to
+      field_category_help: Leave as "Every category" to always show the field, or restrict it to a single category.
+      field_active: Active
+      field_active_help: Inactive fields are hidden on the ticket form.
+      category_all: Every category
+      type:
+        text: Short text
+        textarea: Long text
+        number: Number
+        email: Email
+        url: URL
+        date: Date
+        select: Dropdown
+        radio: Radio buttons
+        checkbox: Checkboxes
   forum:
     nav_item: Support
     title: Support Center
@@ -66,6 +112,9 @@ cengizkemec-support:
     uploading: Uploading...
     upload_done: Uploaded
     upload_failed: Upload failed. Please try again.
+    upload_too_large: "That file is too large. The maximum size is 5 MB."
+    attachment_hint: "Tip: paste an image with Ctrl+V (or ⌘+V) to attach it."
+    remove_attachment: Remove attachment
     create: Create Ticket
     reply: Reply
     reply_placeholder: Write a reply...
@@ -88,23 +137,55 @@ cengizkemec-support:
     error_status: Failed to update the status.
     error_assign: Failed to assign the ticket.
     error_create: Failed to create the ticket.
+    error_preferences: Failed to save your notification preference.
+    guest_title: Sign in to open a support ticket
+    guest_text: You need an account to open a support ticket and follow its progress. Log in or create a free account to get started.
+    guest_login: Log In
+    guest_register: Sign Up
+    back_to_support: Back to Support
+    meta_title_text: Support
+    details: Details
+    field_required: "This field is required."
+    notifications:
+      label: Support notifications
+      help: Receive an alert and an email when a ticket is created or answered.
+      on: Support notifications are on.
+      off: Support notifications are off.
+    notification:
+      new_ticket: "{username} opened a new support ticket"
+      ticket_reply: "{username} replied to a support ticket"
+      new_ticket_label: New support ticket
+      ticket_reply_label: Reply to a support ticket
   email:
     new_ticket_subject: "New support ticket: {subject}"
     reply_subject: "New reply on: {subject}"
     new_ticket:
-      body: |
-        {opener_display_name} opened a new support ticket "{title}".
+      plain:
+        body: |
+          {opener_display_name} opened a new support ticket "{title}".
 
-        {content}
+          {content}
 
-        {url}
+          Open the ticket: {url}
+      html:
+        body: |
+          {opener_display_name} opened a new support ticket "{title}".
+
+          {content}
+
+          [Open the ticket]({url})
     ticket_reply:
-      body: |
-        {author_display_name} replied to the support ticket "{title}".
+      plain:
+        body: |
+          {author_display_name} replied to the support ticket "{title}".
 
-        {content}
+          {content}
 
-        {url}
-  notification:
-    new_ticket: "New support ticket created"
-    ticket_reply: "New reply on your ticket"
+          Open the ticket: {url}
+      html:
+        body: |
+          {author_display_name} replied to the support ticket "{title}".
+
+          {content}
+
+          [Open the ticket]({url})

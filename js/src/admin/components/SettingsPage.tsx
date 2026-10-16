@@ -7,38 +7,11 @@ import Switch from 'flarum/common/components/Switch';
 import extractText from 'flarum/common/utils/extractText';
 import type Mithril from 'mithril';
 import TicketCategory from '../../common/models/TicketCategory';
+import TicketFormField from '../../common/models/TicketFormField';
+import { fieldName, slugify } from '../../common/utils/slug';
 
-/**
- * Turkish characters that have no ASCII decomposition (or differ from it),
- * so slugs stay valid and readable.
- */
-const TURKISH_CHAR_MAP: Record<string, string> = {
-  'ç': 'c',
-  'Ç': 'c',
-  'ğ': 'g',
-  'Ğ': 'g',
-  'ı': 'i',
-  'İ': 'i',
-  'ö': 'o',
-  'Ö': 'o',
-  'ş': 's',
-  'Ş': 's',
-  'ü': 'u',
-  'Ü': 'u',
-};
-
-/**
- * Build a URL slug from a human readable name, handling Turkish characters.
- */
-export function slugify(value: string): string {
-  return value
-    .replace(/[çÇğĞıİöÖşŞüÜ]/g, (char) => TURKISH_CHAR_MAP[char] || char)
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-}
+// Kept exported for backwards compatibility with the forum bundle.
+export { slugify };
 
 interface CategoryDraft {
   name: string;
@@ -56,6 +29,35 @@ const emptyDraft = (): CategoryDraft => ({
   isActive: true,
 });
 
+/** Field types the administrator can add to the ticket form. */
+const FIELD_TYPES = ['text', 'textarea', 'number', 'email', 'url', 'date', 'select', 'radio', 'checkbox'];
+
+/** Types that need a list of choices. */
+const CHOICE_TYPES = ['select', 'radio', 'checkbox'];
+
+interface FieldDraft {
+  label: string;
+  name: string;
+  nameTouched: boolean;
+  type: string;
+  /** One choice per line, as typed by the administrator. */
+  optionsText: string;
+  isRequired: boolean;
+  isActive: boolean;
+  categoryId: string;
+}
+
+const emptyFieldDraft = (): FieldDraft => ({
+  label: '',
+  name: '',
+  nameTouched: false,
+  type: 'text',
+  optionsText: '',
+  isRequired: false,
+  isActive: true,
+  categoryId: '',
+});
+
 export default class SettingsPage extends ExtensionPage {
   categories: TicketCategory[] = [];
   loadingCategories = true;
@@ -65,12 +67,46 @@ export default class SettingsPage extends ExtensionPage {
   creating = false;
   draft: CategoryDraft = emptyDraft();
 
+  /** Admin-defined extra fields users fill in when opening a ticket. */
+  formFields: TicketFormField[] = [];
+  loadingFields = true;
+  fieldsError = false;
+  showFieldForm = false;
+  creatingField = false;
+  fieldDraft: FieldDraft = emptyFieldDraft();
+
   /** Id of the category currently being saved/deleted, used for per-row spinners. */
   busyCategoryId: string | null = null;
+
+  /** Id of the form field currently being saved/deleted. */
+  busyFieldId: string | null = null;
 
   oninit(vnode: any) {
     super.oninit(vnode);
     this.loadCategories();
+    this.loadFormFields();
+  }
+
+  async loadFormFields() {
+    this.loadingFields = true;
+    this.fieldsError = false;
+    m.redraw();
+
+    try {
+      const result = await app.store.find('ticket-form-fields', { sort: 'position', include: 'category' });
+      const list = Array.isArray(result) ? result : [];
+
+      this.formFields = list.filter(Boolean) as TicketFormField[];
+      this.formFields.sort(
+        (a, b) => (Number(a.attribute('position')) || 0) - (Number(b.attribute('position')) || 0)
+      );
+    } catch (e) {
+      this.formFields = [];
+      this.fieldsError = true;
+    } finally {
+      this.loadingFields = false;
+      m.redraw();
+    }
   }
 
   async loadCategories() {
@@ -110,7 +146,43 @@ export default class SettingsPage extends ExtensionPage {
         key: 'cengizkemec-support.email_notifications',
         label: app.translator.trans('cengizkemec-support.admin.email_notifications'),
       },
+      {
+        key: 'cengizkemec-support.staff_group_id',
+        label: app.translator.trans('cengizkemec-support.admin.staff_group'),
+      },
+      {
+        key: 'cengizkemec-support.auto_assign',
+        label: app.translator.trans('cengizkemec-support.admin.auto_assign'),
+      },
     ];
+  }
+
+  /**
+   * The support team is a real Flarum group, so the administrator can simply
+   * point at the group they already created (e.g. "Destek Ekibi") instead of
+   * granting permissions member by member.
+   */
+  protected groupOptions(): Record<string, string> {
+    const options: Record<string, string> = {
+      '': app.translator.trans('cengizkemec-support.admin.staff_group_none') as string,
+    };
+
+    const groups = (app.store.all('groups') as any[]) || [];
+
+    groups
+      .slice()
+      .sort((a: any, b: any) => String(a.nameSingular()).localeCompare(String(b.nameSingular())))
+      .forEach((group: any) => {
+        const id = String(group.id());
+
+        // Guests can never own a ticket; showing the group would only invite a
+        // misconfiguration.
+        if (id === '2') return;
+
+        options[id] = group.nameSingular();
+      });
+
+    return options;
   }
 
   content() {
@@ -118,6 +190,8 @@ export default class SettingsPage extends ExtensionPage {
       <div className="ExtensionPage-settings">
         <div className="container">{this.settingsSection()}</div>
         <div className="container SupportAdmin">
+          <hr className="SupportAdmin-divider" />
+          {this.formsSection()}
           <hr className="SupportAdmin-divider" />
           {this.categoriesSection()}
         </div>
@@ -148,6 +222,21 @@ export default class SettingsPage extends ExtensionPage {
           help: app.translator.trans('cengizkemec-support.admin.email_notifications_help'),
         })}
 
+        {this.buildSettingComponent({
+          setting: 'cengizkemec-support.staff_group_id',
+          type: 'select',
+          label: app.translator.trans('cengizkemec-support.admin.staff_group'),
+          help: app.translator.trans('cengizkemec-support.admin.staff_group_help'),
+          options: this.groupOptions(),
+        })}
+
+        {this.buildSettingComponent({
+          setting: 'cengizkemec-support.auto_assign',
+          type: 'boolean',
+          label: app.translator.trans('cengizkemec-support.admin.auto_assign'),
+          help: app.translator.trans('cengizkemec-support.admin.auto_assign_help'),
+        })}
+
         <div className="Form-group Form-controls">
           {this.submitButton()}
           {this.resetButton(
@@ -162,6 +251,376 @@ export default class SettingsPage extends ExtensionPage {
         </div>
       </Form>
     );
+  }
+
+  /**
+   * HESK-style ticket form builder: the administrator decides which extra
+   * questions a user answers when they open a ticket.
+   */
+  protected formsSection() {
+    return (
+      <div className="SupportAdmin-section">
+        <div className="SupportAdmin-header">
+          <div className="SupportAdmin-headerText">
+            <h3 className="ExtensionPage-subHeader">
+              {app.translator.trans('cengizkemec-support.admin.forms.title')}
+            </h3>
+            <p className="helpText">{app.translator.trans('cengizkemec-support.admin.forms.help')}</p>
+          </div>
+
+          <Button
+            className="Button Button--primary"
+            icon={this.showFieldForm ? 'fas fa-times' : 'fas fa-plus'}
+            disabled={this.loadingFields}
+            onclick={() => {
+              this.showFieldForm = !this.showFieldForm;
+              if (this.showFieldForm) this.fieldDraft = emptyFieldDraft();
+              m.redraw();
+            }}
+          >
+            {this.showFieldForm
+              ? app.translator.trans('cengizkemec-support.admin.forms.cancel')
+              : app.translator.trans('cengizkemec-support.admin.forms.add')}
+          </Button>
+        </div>
+
+        {this.showFieldForm && this.fieldForm()}
+
+        {this.fieldsBody()}
+      </div>
+    );
+  }
+
+  protected fieldForm() {
+    const draft = this.fieldDraft;
+    const needsOptions = CHOICE_TYPES.indexOf(draft.type) >= 0;
+    const options = this.parseOptions(draft.optionsText);
+
+    const valid =
+      !!draft.label.trim() &&
+      !!fieldName(draft.name || draft.label) &&
+      (!needsOptions || options.length > 0);
+
+    return (
+      <div className="Form SupportAdmin-form">
+        <div className="Form-group">
+          <label>{app.translator.trans('cengizkemec-support.admin.forms.field_label')}</label>
+          <input
+            className="FormControl"
+            value={draft.label}
+            oninput={(event: Event) => {
+              draft.label = (event.target as HTMLInputElement).value;
+              if (!draft.nameTouched) draft.name = fieldName(draft.label);
+            }}
+          />
+          <p className="helpText">
+            {app.translator.trans('cengizkemec-support.admin.forms.field_label_help')}
+          </p>
+        </div>
+
+        <div className="Form-group">
+          <label>{app.translator.trans('cengizkemec-support.admin.forms.field_name')}</label>
+          <input
+            className="FormControl"
+            value={draft.name}
+            oninput={(event: Event) => {
+              draft.name = (event.target as HTMLInputElement).value;
+              draft.nameTouched = true;
+            }}
+          />
+          <p className="helpText">
+            {app.translator.trans('cengizkemec-support.admin.forms.field_name_help', {
+              name: fieldName(draft.name || draft.label) || '-',
+            })}
+          </p>
+        </div>
+
+        <div className="Form-group">
+          <label>{app.translator.trans('cengizkemec-support.admin.forms.field_type')}</label>
+          <select
+            className="FormControl"
+            value={draft.type}
+            onchange={(event: Event) => {
+              draft.type = (event.target as HTMLSelectElement).value;
+            }}
+          >
+            {FIELD_TYPES.map((type) => (
+              <option value={type}>
+                {app.translator.trans('cengizkemec-support.admin.forms.type.' + type)}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {needsOptions && (
+          <div className="Form-group">
+            <label>{app.translator.trans('cengizkemec-support.admin.forms.field_options')}</label>
+            <textarea
+              className="FormControl"
+              rows={4}
+              value={draft.optionsText}
+              oninput={(event: Event) => {
+                draft.optionsText = (event.target as HTMLTextAreaElement).value;
+              }}
+            />
+            <p className="helpText">
+              {app.translator.trans('cengizkemec-support.admin.forms.field_options_help')}
+            </p>
+          </div>
+        )}
+
+        <div className="Form-group">
+          <label>{app.translator.trans('cengizkemec-support.admin.forms.field_category')}</label>
+          <select
+            className="FormControl"
+            value={draft.categoryId}
+            onchange={(event: Event) => {
+              draft.categoryId = (event.target as HTMLSelectElement).value;
+            }}
+          >
+            <option value="">{app.translator.trans('cengizkemec-support.admin.forms.category_all')}</option>
+            {this.categories.map((category) => (
+              <option value={String(category.id())}>{category.name()}</option>
+            ))}
+          </select>
+          <p className="helpText">
+            {app.translator.trans('cengizkemec-support.admin.forms.field_category_help')}
+          </p>
+        </div>
+
+        <div className="Form-group">
+          <Switch state={draft.isRequired} onchange={(value: boolean) => (draft.isRequired = value)}>
+            {app.translator.trans('cengizkemec-support.admin.forms.field_required')}
+          </Switch>
+        </div>
+
+        <div className="Form-group">
+          <Switch state={draft.isActive} onchange={(value: boolean) => (draft.isActive = value)}>
+            {app.translator.trans('cengizkemec-support.admin.forms.field_active')}
+          </Switch>
+        </div>
+
+        <div className="Form-group Form-controls">
+          <Button
+            className="Button Button--primary"
+            icon="fas fa-plus"
+            loading={this.creatingField}
+            disabled={this.creatingField || !valid}
+            onclick={() => this.createField()}
+          >
+            {app.translator.trans('cengizkemec-support.admin.forms.create')}
+          </Button>
+
+          <Button
+            className="Button"
+            disabled={this.creatingField}
+            onclick={() => {
+              this.showFieldForm = false;
+              this.fieldDraft = emptyFieldDraft();
+              m.redraw();
+            }}
+          >
+            {app.translator.trans('cengizkemec-support.admin.forms.cancel')}
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  protected fieldsBody() {
+    if (this.loadingFields) {
+      return (
+        <div className="SupportAdmin-state">
+          <LoadingIndicator />
+        </div>
+      );
+    }
+
+    if (this.fieldsError) {
+      return (
+        <div className="SupportAdmin-state">
+          <div className="Alert Alert--warning">
+            <span className="Alert-body">
+              {app.translator.trans('cengizkemec-support.admin.forms.load_error')}
+            </span>
+          </div>
+        </div>
+      );
+    }
+
+    if (!this.formFields.length) {
+      return (
+        <div className="SupportAdmin-state">
+          <p className="helpText">{app.translator.trans('cengizkemec-support.admin.forms.empty')}</p>
+        </div>
+      );
+    }
+
+    return (
+      <table className="SupportAdmin-table">
+        <thead>
+          <tr>
+            <th>{app.translator.trans('cengizkemec-support.admin.forms.field_label')}</th>
+            <th>{app.translator.trans('cengizkemec-support.admin.forms.field_name')}</th>
+            <th>{app.translator.trans('cengizkemec-support.admin.forms.field_type')}</th>
+            <th>{app.translator.trans('cengizkemec-support.admin.forms.field_category')}</th>
+            <th>{app.translator.trans('cengizkemec-support.admin.forms.field_required')}</th>
+            <th>{app.translator.trans('cengizkemec-support.admin.forms.field_active')}</th>
+            <th className="SupportAdmin-actionsColumn" />
+          </tr>
+        </thead>
+        <tbody>{this.formFields.map((field) => this.renderFieldRow(field))}</tbody>
+      </table>
+    );
+  }
+
+  protected renderFieldRow(field: TicketFormField) {
+    const id = String(field.id());
+    const busy = this.busyFieldId === id;
+    const category = field.category();
+
+    return (
+      <tr key={id}>
+        <td>
+          <strong>{field.label()}</strong>
+        </td>
+        <td>
+          <code>{field.name()}</code>
+        </td>
+        <td>{app.translator.trans('cengizkemec-support.admin.forms.type.' + field.type())}</td>
+        <td className="SupportAdmin-description">{category ? category.name() : app.translator.trans('cengizkemec-support.admin.forms.category_all')}</td>
+        <td className="SupportAdmin-position">{field.isRequired() ? '✓' : '—'}</td>
+        <td>
+          <Switch state={!!field.isActive()} loading={busy} onchange={() => this.toggleFieldActive(field)} />
+        </td>
+        <td className="SupportAdmin-actionsColumn">
+          <Button
+            className="Button Button--danger Button--small"
+            icon="fas fa-trash-alt"
+            loading={busy}
+            disabled={busy}
+            onclick={() => this.deleteField(field)}
+          >
+            {app.translator.trans('cengizkemec-support.admin.forms.delete')}
+          </Button>
+        </td>
+      </tr>
+    );
+  }
+
+  /** Turn the textarea content into a clean list of choices. */
+  protected parseOptions(text: string): string[] {
+    return (text || '')
+      .split('\n')
+      .map((line) => line.trim())
+      .filter((line) => line !== '');
+  }
+
+  protected nextFieldPosition(): number {
+    return (
+      this.formFields.reduce(
+        (max, field) => Math.max(max, Number(field.attribute('position')) || 0),
+        0
+      ) + 1
+    );
+  }
+
+  async createField() {
+    const label = this.fieldDraft.label.trim();
+    const name = fieldName(this.fieldDraft.name || label);
+    const needsOptions = CHOICE_TYPES.indexOf(this.fieldDraft.type) >= 0;
+    const options = needsOptions ? this.parseOptions(this.fieldDraft.optionsText) : [];
+
+    if (!label || !name) return;
+    if (needsOptions && !options.length) return;
+
+    this.creatingField = true;
+    m.redraw();
+
+    try {
+      const data: any = {
+        label,
+        name,
+        type: this.fieldDraft.type,
+        options,
+        isRequired: this.fieldDraft.isRequired,
+        isActive: this.fieldDraft.isActive,
+        position: this.nextFieldPosition(),
+      };
+
+      if (this.fieldDraft.categoryId) {
+        data.relationships = {
+          category: app.store.getById('ticket-categories', this.fieldDraft.categoryId),
+        };
+      }
+
+      await app.store.createRecord('ticket-form-fields').save(data);
+
+      this.fieldDraft = emptyFieldDraft();
+      this.showFieldForm = false;
+
+      app.alerts.show(
+        { type: 'success' },
+        app.translator.trans('cengizkemec-support.admin.forms.created')
+      );
+
+      await this.loadFormFields();
+    } catch (e) {
+      this.showError(e, 'cengizkemec-support.admin.forms.save_error');
+    } finally {
+      this.creatingField = false;
+      m.redraw();
+    }
+  }
+
+  async toggleFieldActive(field: TicketFormField) {
+    const id = String(field.id());
+
+    this.busyFieldId = id;
+    m.redraw();
+
+    try {
+      await field.save({ isActive: !field.isActive() });
+    } catch (e) {
+      this.showError(e, 'cengizkemec-support.admin.forms.save_error');
+      await this.loadFormFields();
+    } finally {
+      this.busyFieldId = null;
+      m.redraw();
+    }
+  }
+
+  async deleteField(field: TicketFormField) {
+    const id = String(field.id());
+    const label = field.label();
+
+    const confirmed = confirm(
+      extractText(
+        app.translator.trans('cengizkemec-support.admin.forms.confirm_delete', { label })
+      )
+    );
+
+    if (!confirmed) return;
+
+    this.busyFieldId = id;
+    m.redraw();
+
+    try {
+      await field.delete();
+
+      this.formFields = this.formFields.filter((item) => String(item.id()) !== id);
+
+      app.alerts.show(
+        { type: 'success' },
+        app.translator.trans('cengizkemec-support.admin.forms.deleted')
+      );
+    } catch (e) {
+      this.showError(e, 'cengizkemec-support.admin.forms.delete_error');
+      await this.loadFormFields();
+    } finally {
+      this.busyFieldId = null;
+      m.redraw();
+    }
   }
 
   protected categoriesSection() {

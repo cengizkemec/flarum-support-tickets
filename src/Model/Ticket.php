@@ -17,7 +17,21 @@ class Ticket extends AbstractModel
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
         'closed_at' => 'datetime',
+        'custom_fields' => 'array',
     ];
+
+    /**
+     * URL slug derived from the subject, used to build readable ticket links.
+     */
+    public function slug(): string
+    {
+        return \Cengizkemec\SupportTickets\Support\TicketSlug::make($this->subject);
+    }
+
+    public function urlPath(): string
+    {
+        return \Cengizkemec\SupportTickets\Support\TicketSlug::path($this->id, $this->subject);
+    }
 
     public function user(): BelongsTo
     {

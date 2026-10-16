@@ -37,6 +37,7 @@ class TicketCategoryResource extends AbstractDatabaseResource
             Schema\Str::make('name')->requiredOnCreate()->writable(),
             Schema\Str::make('slug')->writable()->unique('ticket_categories', 'slug', true),
             Schema\Str::make('description')->writable()->nullable(),
+            Schema\Integer::make('departmentId')->writable(),
             Schema\Integer::make('position')->writable(),
             Schema\Boolean::make('isActive')->writable(),
         ];

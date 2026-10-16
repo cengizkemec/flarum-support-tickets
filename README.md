@@ -1,13 +1,14 @@
 # Support Tickets for Flarum 2
 
-[![Latest Version](https://img.shields.io/badge/version-1.1.2-blue.svg)](https://github.com/cengizkemec/flarum-support-tickets/releases)
+[![Latest Version](https://img.shields.io/badge/version-1.1.8-blue.svg)](https://github.com/cengizkemec/flarum-support-tickets/releases)
 [![Flarum](https://img.shields.io/badge/flarum-%5E2.0-orange.svg)](https://flarum.org)
 [![PHP](https://img.shields.io/badge/php-%5E8.3-8892bf.svg)](https://www.php.net)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 A full-featured, HESK-style support ticket system for **Flarum 2.0**.
-Users open private tickets, staff manage them from the forum or the admin panel,
-and everything is permission-driven and fully translatable.
+Users open private tickets, staff manage them from the forum or the admin panel, tickets are
+routed to **departments**, written with **Flarum's own rich text editor**, and everything is
+permission-driven and fully translatable.
 
 Extension ID: `cengizkemec/support-tickets`
 
@@ -21,6 +22,7 @@ Extension ID: `cengizkemec/support-tickets`
 - [Installation](#installation)
 - [Permissions](#permissions)
 - [Admin panel](#admin-panel)
+- [Departments](#departments)
 - [Ticket lifecycle](#ticket-lifecycle)
 - [File attachments](#file-attachments)
 - [Scheduled maintenance](#scheduled-maintenance)
@@ -48,8 +50,16 @@ Extension ID: `cengizkemec/support-tickets`
 ## Features
 
 - **Private tickets** — only the owner and staff with the right permission can see a ticket.
+- **Departments** — split the support team into departments from the admin panel, add members
+  with a user search, and link each category to the department that answers it. New tickets are
+  auto-assigned inside the department and only its members are notified. See
+  [Departments](#departments).
+- **Rich text editor** — ticket messages and replies are written with Flarum's own composer
+  editor, so the toolbar, keyboard shortcuts (Ctrl+B/I, Ctrl+Enter) and emoji autocomplete come
+  from whatever formatting extensions the forum runs (markdown, BBCode, emoji, ...). Messages
+  are stored as plain text and rendered with the same server-side formatter posts use.
 - **Categories** — full CRUD from the admin panel, drag-free ordering by position,
-  active/inactive toggle. Inactive categories are hidden from users.
+  active/inactive toggle, optional department link. Inactive categories are hidden from users.
 - **Custom ticket form fields (HESK style)** — define your own fields (text, textarea,
   number, email, url, date, select, radio, checkbox) from the admin panel, either global or
   scoped to one category, with required/active flags and ordering. Answers are validated
@@ -57,15 +67,17 @@ Extension ID: `cengizkemec/support-tickets`
 - **Priorities** — Low / Medium / High / Critical.
 - **Statuses** — New / Answered / Pending / Resolved / Closed.
 - **Staff assignment** — assign a ticket to any staff member (permission-controlled), or let
-  the extension auto-assign new tickets to the configured **support team group**.
+  the extension auto-assign new tickets to the configured **support team group** — or, when the
+  category has a department, to the department member with the fewest open tickets.
 - **Readable ticket URLs** — tickets are linked as `/support/18/ses-ve-mikrofon-sorunu`
   (Turkish-aware slug), while the bare `/support/18` keeps working.
 - **Replies** — threaded conversation with protection against replies on closed tickets.
 - **Secure attachments** — private storage plus authenticated downloads.
 - **Notifications** — in-forum alerts, e-mail (e-mail can be toggled off) and **FoF PWA web
-  push links**. Ticket notifications render with an icon, the sender, the action text and an
-  excerpt of the ticket subject, and link straight to the ticket. Users can enable or disable
-  each type.
+  push links**. Notifications about a ticket in a department-linked category go to that
+  department's members only. Ticket notifications render with an icon, the sender, the action
+  text and an excerpt of the ticket subject, and link straight to the ticket. Users can enable
+  or disable each type.
 - **Guest-friendly support centre** — guests landing on `/support` get a clear invitation to
   sign in or register, and both buttons open the standard Flarum modals. "Support" stays
   visible in the sidebar for everyone.
@@ -76,7 +88,7 @@ Extension ID: `cengizkemec/support-tickets`
 - **Full i18n** — every string is translatable; English and Turkish ship out of the box.
   Browser-tab titles follow the page (support centre and ticket subject).
 - **Admin panel** — settings page with an inline category manager, an inline form-field
-  manager and the support team group selector.
+  manager, a departments manager with a member picker and the support team group selector.
 - **Scheduled maintenance** — automatic closing of inactive tickets and purging of orphaned
   attachments.
 
@@ -88,11 +100,11 @@ Screenshots below were taken on a live Flarum 2.0.1 forum running this extension
 
 | Support centre | Ticket view |
 |----------------|-------------|
-| ![Support centre](docs/screenshots/support-center.png) | ![Ticket view](docs/screenshots/ticket-view.png) |
+| ![Support centre](docs/images/support-center.png) | ![Ticket view](docs/images/ticket-view.png) |
 
 | Notifications |   |
 |---------------|---|
-| ![Ticket notifications](docs/screenshots/notifications.png) |
+| ![Ticket notifications](docs/images/notifications.png) |
 
 ---
 
@@ -151,9 +163,24 @@ An inline manager to create, edit, toggle and delete ticket categories.
 | **Name** | Required. |
 | **Slug** | Required, unique, URL-friendly. Auto-generated from the name with Turkish-aware transliteration, and editable. |
 | **Description** | Optional. |
+| **Department** | Optional. Links the category to a department so its tickets are routed there. The table has a per-row select that saves instantly. |
 | **Active** | Inactive categories are hidden from the "New Ticket" form. |
 
 Feedback is shown inline (success/error alerts) and empty/loading/error states are handled.
+
+### Departments
+
+An inline manager to create, edit, toggle and delete departments, with a member picker.
+
+| Field | Notes |
+|-------|-------|
+| **Name** | Required. |
+| **Slug** | Required, unique. Auto-generated from the name, and editable. |
+| **Description** | Optional. |
+| **Members** | Opens a picker: search users by name or username, add and remove members, save. Only administrators receive the member list from the API. |
+| **Active** | Inactive departments no longer receive tickets; their categories fall back to the general support team. |
+
+Deleting a department unlinks its categories first, so nothing points at a departed department.
 
 ### Form fields
 
@@ -162,7 +189,7 @@ Feedback is shown inline (success/error alerts) and empty/loading/error states a
 | Field | Notes |
 |-------|-------|
 | **Label** | Shown to users on the ticket form. |
-| **Key** | Internal identifier (`letters`, numbers, underscores) used as the key in `tickets.custom_fields`. Auto-generated from the label when left empty. |
+| **Key** | Internal identifier (letters, numbers, underscores) used as the key in `tickets.custom_fields`. Auto-generated from the label when left empty. |
 | **Type** | `text`, `textarea`, `number`, `email`, `url`, `date`, `select`, `radio`, `checkbox`. |
 | **Choices** | For `select` / `radio` / `checkbox`: one choice per line. |
 | **Category** | Leave empty for a global field, or pick a category to show it only there. |
@@ -174,12 +201,43 @@ choices validated against the list) and displayed as label/value rows inside the
 
 ---
 
+## Departments
+
+Departments are groups of support staff used to route tickets. Everything is managed from
+`Admin → Extensions → Support Tickets → Departments`:
+
+1. **Create a department** and give it a name (a slug is generated automatically).
+2. **Add members** with the member picker — the people who should see and answer tickets in
+   this department.
+3. **Link categories** to the department from the category manager (create form or the
+   per-row select on the category table).
+
+From then on the department drives the routing:
+
+- A new ticket in a linked category is **auto-assigned to the department member with the
+  fewest open tickets** (when auto-assign is enabled).
+- **Notifications** for new tickets and for requester replies go only to that department's
+  members, plus the assignee — not to the whole support team.
+- The department is shown as a chip on the ticket list and the ticket page, and the New Ticket
+  modal tells the user which department answers the selected category.
+- A department that is empty or deactivated falls back to the general support team, and
+  deleting a department unlinks its categories, so tickets are never lost.
+
+> Department membership routes tickets; it does not grant access by itself. Make sure members
+> hold the support permissions (or belong to the configured support team group) so they can
+> open the tickets assigned to them.
+
+---
+
 ## Ticket lifecycle
 
 1. A user opens `New Ticket`, picks an active category, writes a subject and a message,
    answers the custom form fields configured for that category (if any), and may attach a file.
-2. The ticket is created with status **New** and priority **Medium**.
+2. The ticket is created with status **New** and priority **Medium**, and — when auto-assign
+   is enabled — handed to a staff member: inside the category's department when it has one,
+   otherwise across the whole support team.
 3. Staff reply, change the priority, assign the ticket and move it through the statuses.
+   Notifications follow the department when the category is linked to one.
 4. **Resolved** and **Closed** tickets reject replies from non-staff until reopened.
 
 ---
@@ -250,11 +308,16 @@ All endpoints are JSON:API resources under `/api` and require authentication whe
 | `POST` | `/api/tickets` | `tickets` | `user_id` is always set server-side from the authenticated actor. |
 | `PATCH` | `/api/tickets/{id}` | `tickets` | Status, priority and assignee changes require staff permissions. |
 | `DELETE` | `/api/tickets/{id}` | `tickets` | Requires `support.manage`. |
-| `GET` / `POST` | `/api/ticket-categories` | `ticket-categories` | Fields: `name`, `slug` (unique), `description`, `position`, `isActive`. |
+| `GET` / `POST` | `/api/ticket-categories` | `ticket-categories` | Fields: `name`, `slug` (unique), `description`, `departmentId` (nullable, validated), `position`, `isActive`. The `department` relationship is includable. |
+| `GET` / `POST` / `PATCH` / `DELETE` | `/api/support-departments` | `support-departments` | Admin-only mutations. Fields: `name`, `slug` (unique), `description`, `userIds` (member ids, only serialised for administrators), `isActive`. |
 | `GET` / `POST` / `PATCH` / `DELETE` | `/api/ticket-form-fields` | `ticket-form-fields` | Fields: `label`, `name`, `type`, `options` (array, for `select`/`radio`/`checkbox`), `isRequired`, `isActive`, `position`, `category`. Sortable by `position`. |
 | `GET` / `POST` | `/api/ticket-replies` | `ticket-replies` | The `ticket` relationship is required on create. |
 | `POST` | `/api/support/upload` | — | Multipart file upload; returns the stored filename. |
 | `GET` | `/api/support/attachments/{filename}` | — | Authenticated download; 403/404 on failure. |
+
+Tickets and replies carry a read-only `messageHtml` attribute: the stored plain text rendered
+by the same server-side s9e formatter posts use (lists, quotes, code, links), which is what the
+forum displays.
 
 ---
 
@@ -271,6 +334,17 @@ All endpoints are JSON:API resources under `/api` and require authentication whe
   Only raster images are served `inline`; everything else is forced to download.
 - Uploaded files are stored under a random 40-character name derived from the verified MIME
   type, so a crafted filename cannot escape the storage directory or change the extension.
+- Message bodies are capped at **15,000 characters**, and category, department and form-field
+  inputs have explicit length/size bounds, so a crafted request cannot exceed its column or
+  force the formatter to digest an enormous body.
+- A ticket's `attachment` can only ever hold a server-generated filename — crafted values are
+  refused on create **and** on update, even for staff, and the stored value is kept.
+- Formatted message HTML is produced exclusively by the core s9e formatter (the same trust
+  chain as posts) and rendered with `m.trust` exactly like core posts; list excerpts are
+  parsed with `DOMParser`, and the fallback rendering escapes the raw text.
+- `ticket_categories.department_id` is validated with `exists:support_departments,id`; the
+  `userIds` of a department are filtered against the users table and only serialised for
+  administrators.
 - Invalid status/priority values are rejected, and replies cannot spoof `isStaff`.
 - Covered by an automated security regression suite (guest access, cross-user isolation,
   mass-assignment, `isStaff` spoofing, download headers, upload validation including

@@ -49,7 +49,7 @@ class TicketReplyResource extends AbstractDatabaseResource
     public function fields(): array
     {
         return [
-            Schema\Str::make('message')->requiredOnCreate()->writable(),
+            Schema\Str::make('message')->requiredOnCreate()->writable()->maxLength(15000),
             Schema\Str::make('messageHtml')
                 ->get(fn (TicketReply $reply, Context $context) => TicketFormat::html($reply->message, $context->getActor())),
             Schema\Str::make('attachment')->writable()->nullable(),

@@ -3,8 +3,8 @@ import app from 'flarum/forum/app';
 /**
  * A short, single-paragraph plain-text excerpt of a formatted message.
  *
- * Formatted HTML is converted to text through the DOM (which also resolves
- * entities); raw markdown/plain text is used as-is.
+ * Formatted HTML is converted to text with DOMParser, which never executes
+ * scripts or loads resources; raw markdown/plain text is used as-is.
  */
 export function plainExcerpt(
   html: string | null | undefined,
@@ -14,9 +14,8 @@ export function plainExcerpt(
   let text = '';
 
   if (html) {
-    const div = document.createElement('div');
-    div.innerHTML = html;
-    text = div.textContent || '';
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    text = (doc.body && doc.body.textContent) || '';
   } else {
     text = fallback || '';
   }

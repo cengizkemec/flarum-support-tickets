@@ -57,7 +57,7 @@ class TicketFormFieldResource extends AbstractDatabaseResource
             Schema\Str::make('label')->requiredOnCreate()->writable()->maxLength(255),
             Schema\Str::make('name')->writable()->maxLength(100),
             Schema\Str::make('type')->requiredOnCreate()->writable()->in(TicketFormField::TYPES),
-            Schema\Arr::make('options')->writable()->nullable(),
+            Schema\Arr::make('options')->writable()->nullable()->rule('max:200'),
             Schema\Boolean::make('isRequired')->writable(),
             Schema\Boolean::make('isActive')->writable(),
             Schema\Integer::make('position')->writable(),

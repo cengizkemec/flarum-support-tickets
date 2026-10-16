@@ -34,12 +34,16 @@ class TicketCategoryResource extends AbstractDatabaseResource
     public function fields(): array
     {
         return [
-            Schema\Str::make('name')->requiredOnCreate()->writable(),
-            Schema\Str::make('slug')->writable()->unique('ticket_categories', 'slug', true),
-            Schema\Str::make('description')->writable()->nullable(),
+            Schema\Str::make('name')->requiredOnCreate()->writable()->maxLength(255),
+            Schema\Str::make('slug')->writable()->maxLength(255)->unique('ticket_categories', 'slug', true),
+            Schema\Str::make('description')->writable()->nullable()->maxLength(15000),
             // Nullable so the administrator can unlink a category from its
-            // department again (the panel sends null).
-            Schema\Integer::make('departmentId')->writable()->nullable(),
+            // department again (the panel sends null). Must point at a real
+            // department when set.
+            Schema\Integer::make('departmentId')
+                ->writable()
+                ->nullable()
+                ->rule('exists:support_departments,id'),
             Schema\Integer::make('position')->writable(),
             Schema\Boolean::make('isActive')->writable(),
 

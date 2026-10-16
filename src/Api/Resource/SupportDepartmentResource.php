@@ -58,7 +58,7 @@ class SupportDepartmentResource extends AbstractDatabaseResource
     {
         return [
             Schema\Str::make('name')->requiredOnCreate()->writable()->maxLength(100),
-            Schema\Str::make('slug')->writable()->unique('support_departments', 'slug', true),
+            Schema\Str::make('slug')->writable()->maxLength(100)->unique('support_departments', 'slug', true),
             Schema\Str::make('description')->writable()->nullable()->maxLength(500),
             Schema\Arr::make('userIds')
                 // Department members are an administrative detail: regular
@@ -67,7 +67,10 @@ class SupportDepartmentResource extends AbstractDatabaseResource
                     ? $department->members()
                     : [])
                 ->writable()
-                ->nullable(),
+                ->nullable()
+                // A department never needs more members than the list can be
+                // reasonably allowed to carry.
+                ->rule('max:500'),
             Schema\Boolean::make('isActive')->writable(),
             Schema\Integer::make('memberCount')
                 ->get(fn (SupportDepartment $department) => $department->memberCount()),

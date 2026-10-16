@@ -59,7 +59,9 @@ class TicketResource extends AbstractDatabaseResource
     {
         return [
             Schema\Str::make('subject')->requiredOnCreate()->writable()->maxLength(255),
-            Schema\Str::make('message')->requiredOnCreate()->writable(),
+            // Bounded so a crafted request cannot write more than the column
+            // holds (TEXT) or burn memory formatting an enormous body.
+            Schema\Str::make('message')->requiredOnCreate()->writable()->maxLength(15000),
             // The message rendered by the forum formatter, so the ticket view
             // shows the same formatting (bold, links, emoji, code...) the rich
             // editor produces.
@@ -158,6 +160,12 @@ class TicketResource extends AbstractDatabaseResource
                 $model->assigned_to = $original->assigned_to;
                 $model->category_id = $original->category_id;
                 $model->user_id = $original->user_id;
+            }
+
+            // Attachment names are always server-generated; a hand-crafted
+            // value is refused even from staff, and the stored one kept.
+            if ($model->attachment && ! preg_match('/^[a-zA-Z0-9]{40}\.[a-z0-9]+$/', $model->attachment)) {
+                $model->attachment = $original->attachment;
             }
         }
 

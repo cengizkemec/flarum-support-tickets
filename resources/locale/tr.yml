@@ -1,14 +1,36 @@
 cengizkemec-support:
   admin:
     title: Destek Biletleri
-    categories: Kategoriler
     settings: Ayarlar
     auto_close_days: Otomatik kapatma (gün)
-    email_notifications: E-posta Bildirimleri
+    auto_close_days_help: "Bu süre boyunca hareket görmeyen biletler otomatik olarak kapatılır. İzin verilen değerler: 1-365."
+    email_notifications: E-posta bildirimleri
+    email_notifications_help: Bir bilet oluşturulduğunda veya yanıt yazıldığında ilgililere e-posta gönderilir.
     permissions:
       view_all: Tüm destek biletlerini gör
       reply: Destek biletlerine yanıt ver
       manage: Destek biletlerini yönet
+    categories:
+      title: Bilet kategorileri
+      help: Kategoriler, kullanıcıların bilet açarken doğru departmanı seçmesine yardımcı olur.
+      add: Kategori ekle
+      cancel: Vazgeç
+      create: Kategori oluştur
+      delete: Sil
+      position: Sıra
+      empty: Henüz kategori yok. Başlamak için bir tane oluşturun.
+      load_error: Kategoriler yüklenemedi. Lütfen tekrar deneyin.
+      created: Kategori oluşturuldu.
+      deleted: Kategori silindi.
+      save_error: Kategori kaydedilemedi.
+      delete_error: Kategori silinemedi.
+      confirm_delete: "{name} kategorisini silmek istediğinizden emin misiniz?"
+      field_name: Ad
+      field_slug: Kısa ad (slug)
+      field_slug_help: Küçük harf, rakam ve tire içeren URL dostu tanımlayıcı.
+      field_description: Açıklama
+      field_active: Etkin
+      field_active_help: Etkin olmayan kategoriler kullanıcılar bilet açarken gizlenir.
   forum:
     nav_item: Destek
     title: Destek Merkezi

@@ -1,14 +1,36 @@
 cengizkemec-support:
   admin:
     title: Support Tickets
-    categories: Categories
     settings: Settings
     auto_close_days: Auto-close after (days)
-    email_notifications: Email Notifications
+    auto_close_days_help: "Tickets that have had no activity for this many days are closed automatically. Allowed values: 1-365."
+    email_notifications: Email notifications
+    email_notifications_help: Send an email to the people involved when a ticket is created or a reply is posted.
     permissions:
       view_all: View all support tickets
       reply: Reply to support tickets
       manage: Manage support tickets
+    categories:
+      title: Ticket categories
+      help: Categories help users pick the right department when they open a ticket.
+      add: Add category
+      cancel: Cancel
+      create: Create category
+      delete: Delete
+      position: Position
+      empty: No categories yet. Create one to get started.
+      load_error: Categories could not be loaded. Please try again.
+      created: Category created.
+      deleted: Category deleted.
+      save_error: The category could not be saved.
+      delete_error: The category could not be deleted.
+      confirm_delete: "Are you sure you want to delete {name}?"
+      field_name: Name
+      field_slug: Slug
+      field_slug_help: URL-friendly identifier using lowercase letters, numbers and dashes.
+      field_description: Description
+      field_active: Active
+      field_active_help: Inactive categories are hidden when users open a ticket.
   forum:
     nav_item: Support
     title: Support Center

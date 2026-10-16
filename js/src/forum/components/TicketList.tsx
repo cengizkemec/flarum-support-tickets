@@ -1,7 +1,7 @@
 import Component from 'flarum/common/Component';
 import Link from 'flarum/common/components/Link';
 import app from 'flarum/forum/app';
-import { formatDateTime } from '../utils/format';
+import { formatDateTime, plainExcerpt } from '../utils/format';
 import { ticketUrl } from '../utils/ticketUrl';
 
 const T = (key: string, params?: any) => app.translator.trans('cengizkemec-support.forum.' + key, params);
@@ -51,7 +51,11 @@ export default class TicketList extends Component {
             </div>
           </div>
 
-          {ticket.message() && <p className="SupportCard-excerpt">{ticket.message()}</p>}
+          {ticket.message() && (
+            <p className="SupportCard-excerpt">
+              {plainExcerpt(ticket.messageHtml && ticket.messageHtml(), ticket.message())}
+            </p>
+          )}
 
           <div className="SupportCard-meta">
             {category && (

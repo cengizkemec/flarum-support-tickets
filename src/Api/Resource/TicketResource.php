@@ -5,6 +5,7 @@ namespace Cengizkemec\SupportTickets\Api\Resource;
 use Carbon\Carbon;
 use Cengizkemec\SupportTickets\Model\Ticket;
 use Cengizkemec\SupportTickets\Support\TicketCustomFields;
+use Cengizkemec\SupportTickets\Support\TicketFormat;
 use Cengizkemec\SupportTickets\Support\TicketStaff;
 use Tobyz\JsonApiServer\Context;
 use Flarum\Api\Endpoint;
@@ -59,6 +60,11 @@ class TicketResource extends AbstractDatabaseResource
         return [
             Schema\Str::make('subject')->requiredOnCreate()->writable()->maxLength(255),
             Schema\Str::make('message')->requiredOnCreate()->writable(),
+            // The message rendered by the forum formatter, so the ticket view
+            // shows the same formatting (bold, links, emoji, code...) the rich
+            // editor produces.
+            Schema\Str::make('messageHtml')
+                ->get(fn (Ticket $ticket, Context $context) => TicketFormat::html($ticket->message, $context->getActor())),
             Schema\Str::make('status')
                 ->writable(fn (Ticket $ticket, Context $context) => $context->getActor()->can('support.viewAll') || $context->getActor()->can('support.manage'))
                 ->in(self::ALLOWED_STATUSES),

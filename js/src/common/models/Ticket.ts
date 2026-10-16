@@ -4,6 +4,8 @@ import User from 'flarum/common/models/User';
 export default class Ticket extends Model {
   subject = Model.attribute<string>('subject');
   message = Model.attribute<string>('message');
+  /** The message rendered as HTML by the server-side formatter. */
+  messageHtml = Model.attribute<string>('messageHtml');
   status = Model.attribute<string>('status');
   priority = Model.attribute<string>('priority');
   attachment = Model.attribute<string | null>('attachment');

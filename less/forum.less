@@ -495,11 +495,24 @@
   }
 }
 
-.TicketMessage-text {
-  white-space: pre-wrap;
+.TicketMessage-text,
+.TicketReply-text {
+  margin: 0;
   word-break: break-word;
   line-height: 1.6;
   color: var(--text-color);
+
+  // Fallback rendering of the raw stored text: keep its line breaks.
+  &--plain {
+    white-space: pre-wrap;
+  }
+
+  // Formatted content is wrapped in Flarum's Post-body classes so lists,
+  // quotes and code look exactly like they do in a post. The ticket keeps its
+  // own typography.
+  &.Post-body {
+    font-size: inherit;
+  }
 }
 
 .TicketAttachment {
@@ -667,14 +680,6 @@
   }
 }
 
-.TicketReply-text {
-  white-space: pre-wrap;
-  word-break: break-word;
-  line-height: 1.6;
-  margin: 0;
-  color: var(--text-color);
-}
-
 .TicketStaffTag {
   display: inline-flex;
   align-items: center;
@@ -705,6 +710,43 @@
   font-size: 15px;
   font-weight: 700;
   color: var(--text-color);
+}
+
+// --- Rich text editor ---------------------------------------------------------
+//
+// The ticket forms embed Flarum's composer editor. Core renders the textarea
+// transparent and pulls the controls left by the avatar column, which only
+// makes sense inside the composer; here the editor is a normal form control.
+
+.TicketEditor {
+  margin-bottom: 12px;
+
+  .TextEditor-editor {
+    // Escape the composer's transparent-on-focus treatment: here the editor
+    // is a normal form control, so its background must stay put.
+    &,
+    &:focus,
+    &[disabled] {
+      background-color: var(--control-bg);
+      border: 0;
+    }
+
+    border-radius: var(--border-radius);
+    padding: 10px 14px;
+    min-height: 130px;
+    width: 100%;
+    margin-bottom: 0;
+  }
+
+  .TextEditor-controls {
+    margin: 0;
+    padding: 8px 0 0;
+    border-top: 0;
+  }
+
+  .TextEditor-toolbar {
+    white-space: nowrap;
+  }
 }
 
 // Staff control panel

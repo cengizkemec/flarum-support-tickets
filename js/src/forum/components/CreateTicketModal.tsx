@@ -2,6 +2,7 @@ import Modal from 'flarum/common/components/Modal';
 import Button from 'flarum/common/components/Button';
 import Stream from 'flarum/common/utils/Stream';
 import app from 'flarum/forum/app';
+import TicketEditor from './TicketEditor';
 import { ticketUrl } from '../utils/ticketUrl';
 import { attachmentError, attachmentUrl, isImageAttachment, pastedImage, uploadAttachment } from '../utils/attachments';
 
@@ -250,14 +251,13 @@ export default class CreateTicketModal extends Modal {
 
           <div className="Form-group">
             <label>{T('message')}</label>
-            <textarea
-              className="FormControl"
-              rows={6}
+            <TicketEditor
               value={this.message()}
-              oninput={(e: any) => this.message(e.target.value)}
-              onpaste={this.onPaste.bind(this)}
               placeholder={T('message_placeholder')}
-              required
+              disabled={this.loading || this.uploading}
+              onchange={(value: string) => this.message(value)}
+              onsubmit={() => this.submit()}
+              onpaste={this.onPaste.bind(this)}
             />
             <div className="AttachmentHint">{T('attachment_hint')}</div>
           </div>

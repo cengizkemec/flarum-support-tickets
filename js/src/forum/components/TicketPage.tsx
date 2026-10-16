@@ -7,6 +7,7 @@ import LinkButton from 'flarum/common/components/LinkButton';
 import extractText from 'flarum/common/utils/extractText';
 import Stream from 'flarum/common/utils/Stream';
 import app from 'flarum/forum/app';
+import TicketEditor from './TicketEditor';
 import { formatDateTime } from '../utils/format';
 import { ticketUrl } from '../utils/ticketUrl';
 import { attachmentError, attachmentUrl, isImageAttachment, pastedImage, uploadAttachment } from '../utils/attachments';
@@ -27,6 +28,8 @@ export default class TicketPage extends Page {
   error: string | null = null;
   ticket: any = null;
   replyMessage = Stream('');
+  /** The reply editor's driver, used to clear it after a reply is posted. */
+  editor: any = null;
   attachment = Stream('');
   attachmentName = Stream('');
   /** Local object URL used to preview the file before it is submitted. */
@@ -236,11 +239,26 @@ export default class TicketPage extends Page {
             </span>
             <span className="TicketMessage-time">{formatDateTime(ticket.createdAt())}</span>
           </div>
-          <div className="TicketMessage-text">{ticket.message()}</div>
+          {this.renderContent('TicketMessage-text', ticket.messageHtml && ticket.messageHtml(), ticket.message())}
           {this.attachmentBlock(ticket.attachment())}
         </div>
       </div>
     );
+  }
+
+  /**
+   * Render a stored message: formatted HTML from the server-side formatter
+   * (the same one posts use) when available, otherwise the raw text with its
+   * line breaks preserved.
+   */
+  renderContent(className: string, html: string | null | undefined, fallback: string | null | undefined) {
+    if (html) {
+      // s9e-formatted output is safe: text is escaped and only whitelisted
+      // tags survive, which is exactly how Flarum renders post content.
+      return <div className={`${className} Post-body`}>{m.trust(html)}</div>;
+    }
+
+    return <div className={`${className} ${className}--plain`}>{fallback || ''}</div>;
   }
 
   /**
@@ -306,7 +324,7 @@ export default class TicketPage extends Page {
                   {staff && <span className="TicketStaffTag">{T('staff')}</span>}
                   <span className="TicketReply-time">{formatDateTime(reply.createdAt())}</span>
                 </div>
-                <p className="TicketReply-text">{reply.message()}</p>
+                {this.renderContent('TicketReply-text', reply.messageHtml && reply.messageHtml(), reply.message())}
                 {this.attachmentBlock(reply.attachment())}
               </div>
             </div>
@@ -357,13 +375,14 @@ export default class TicketPage extends Page {
     return (
       <div className="TicketReplyForm">
         <h3 className="TicketReplyForm-title">{T('reply')}</h3>
-        <textarea
-          className="FormControl"
-          rows={4}
+        <TicketEditor
           value={this.replyMessage()}
-          oninput={(e: any) => this.replyMessage(e.target.value)}
-          onpaste={this.onPaste.bind(this)}
           placeholder={T('reply_placeholder')}
+          disabled={this.submitting || this.uploading}
+          onchange={(value: string) => this.replyMessage(value)}
+          onsubmit={() => this.submitReply()}
+          onpaste={this.onPaste.bind(this)}
+          onready={(editor: any) => (this.editor = editor)}
         />
         <div className="AttachmentHint">{T('attachment_hint')}</div>
         {this.attachmentArea()}
@@ -510,6 +529,7 @@ export default class TicketPage extends Page {
       await app.store.createRecord('ticket-replies').save(data);
 
       this.replyMessage('');
+      this.clearEditor();
       this.revokePreview();
       this.attachment('');
       this.attachmentName('');
@@ -520,6 +540,20 @@ export default class TicketPage extends Page {
       this.submitting = false;
       m.redraw();
     }
+  }
+
+  /**
+   * Empty the reply editor after a reply was posted. The textarea belongs to
+   * the editor driver, so clearing it also means notifying the editor that its
+   * content changed.
+   */
+  clearEditor() {
+    const el = this.editor && this.editor.el;
+
+    if (!el) return;
+
+    el.value = '';
+    el.dispatchEvent(new Event('input', { bubbles: true }));
   }
 
   async updateStatus(status: string) {

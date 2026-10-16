@@ -4,6 +4,7 @@ namespace Cengizkemec\SupportTickets\Api\Resource;
 
 use Cengizkemec\SupportTickets\Model\Ticket;
 use Cengizkemec\SupportTickets\Model\TicketReply;
+use Cengizkemec\SupportTickets\Support\TicketFormat;
 use Tobyz\JsonApiServer\Context;
 use Flarum\Api\Endpoint;
 use Flarum\Api\Resource\AbstractDatabaseResource;
@@ -49,6 +50,8 @@ class TicketReplyResource extends AbstractDatabaseResource
     {
         return [
             Schema\Str::make('message')->requiredOnCreate()->writable(),
+            Schema\Str::make('messageHtml')
+                ->get(fn (TicketReply $reply, Context $context) => TicketFormat::html($reply->message, $context->getActor())),
             Schema\Str::make('attachment')->writable()->nullable(),
             Schema\Boolean::make('isStaff')->get(fn (TicketReply $reply) => (bool) $reply->is_staff),
             Schema\DateTime::make('createdAt'),

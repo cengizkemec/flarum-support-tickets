@@ -1,5 +1,59 @@
 # Changelog
 
+## 1.1.8 — 2026-10-16
+
+This release completes the departments feature begun in the 1.1.4–1.1.6 commits, brings
+Flarum's composer to the ticket forms, and hardens the extension's input handling.
+
+### Added (departments)
+
+- **Departments manager in the admin panel.** Create, rename (slug), describe, activate and
+  delete departments next to the category manager. A department that is deleted has its
+  categories unlinked first, so nothing dangles.
+- **Member management.** Every department row opens a modal where the administrator searches
+  users (debounced, avatar + display name) and adds or removes members. Deleted accounts are
+  dropped from the list on open, and the member list is stored server-side as ids that are
+  filtered against the users table.
+- **Categories link to a department.** The category form gained a department select and the
+  category table a per-row select that saves on change; "No department" keeps the category on
+  the general support team.
+- **Everything follows the department.** A new ticket in a category linked to a department is
+  auto-assigned to the department member with the fewest open tickets, and new-ticket /
+  requester-reply notifications go only to that department's members (plus the assignee). When
+  a department is empty or disabled, routing falls back to the whole support team.
+- **Forum visibility.** Tickets show their department as a chip on the list and ticket page,
+  and the new-ticket modal prints which department answers the selected category. Member ids
+  are only serialised for administrators.
+
+### Added (rich text editor)
+
+- **The ticket forms now use Flarum's composer editor.** Message and reply fields render the
+  exact `TextEditor` the composer uses, so whatever formatting extensions the forum has
+  (markdown, BBCode, emoji, ...) contribute their toolbar buttons, keyboard shortcuts
+  (Ctrl+B/I, Ctrl+Enter to submit) and emoji autocomplete automatically, on every forum.
+  Paste-to-attach keeps working because the paste handler is wired to the editor's textarea.
+- **Messages render formatted.** Tickets and replies expose a `messageHtml` attribute produced
+  by the same server-side s9e formatter posts use, and the ticket view renders it with
+  Flarum's `Post-body` styles (lists, quotes, code, links). A formatter failure falls back to
+  escaped, line-broken plain text.
+- Ticket list excerpts are derived from the formatted output as plain text.
+
+### Security
+
+- Message length is capped at 15,000 characters (`tickets.message`, `ticket_replies.message`)
+  so a crafted request cannot exceed the TEXT column or force the formatter to digest an
+  enormous body. Category name/slug/description, department slug, department member lists
+  (500) and form-field choice lists (200) are bounded the same way.
+- `ticket_categories.department_id` is validated with `exists:support_departments,id`.
+- A ticket's `attachment` can only ever hold a server-generated filename; crafted values are
+  refused on update even for staff, and the stored value is kept.
+- The ticket-list excerpt parser uses `DOMParser` instead of `innerHTML`, so formatted content
+  can never execute scripts or load resources while being converted to text.
+- Re-verified: attachment uploads are MIME-sniffed with `finfo`, stored under random names
+  with `0640` permissions; downloads enforce ticket authorization, `nosniff`, a sandboxing CSP
+  and force raster images only inline; formatted message HTML is produced exclusively by the
+  core s9e formatter, the same trust chain as posts.
+
 ## 1.1.2 — 2026-10-16
 
 Verified end-to-end on a live Flarum 2.0.1 installation (PHP 8.4, MariaDB), including a

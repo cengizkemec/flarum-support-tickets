@@ -17,7 +17,7 @@ cengizkemec-support:
       manage: Destek biletlerini yönet
     categories:
       title: Bilet kategorileri
-      help: Kategoriler, kullanıcıların bilet açarken doğru departmanı seçmesine yardımcı olur.
+      help: Kategoriler, kullanıcıların bilet açarken doğru departmanı seçmesine yardımcı olur. Biletleri yönlendirmek için kategoriyi bir departmana bağlayın.
       add: Kategori ekle
       cancel: Vazgeç
       create: Kategori oluştur
@@ -34,8 +34,49 @@ cengizkemec-support:
       field_slug: Kısa ad (slug)
       field_slug_help: Küçük harf, rakam ve tire içeren URL dostu tanımlayıcı.
       field_description: Açıklama
+      field_department: Departman
+      field_department_help: "Bu kategorideki biletler atama ve bildirim için departman üyelerine yönlendirilir. Genel destek ekibi için \"Departman yok\" olarak bırakın."
+      department_none: "— Departman yok —"
       field_active: Etkin
       field_active_help: Etkin olmayan kategoriler kullanıcılar bilet açarken gizlenir.
+    departments:
+      title: Departmanlar
+      help: "Destek ekibinizi departmanlara ayırın, her birine ait kişileri ekleyin ve kategorileri departmanlara bağlayın. Yeni biletler departman üyelerine atanır ve yalnızca onlar bildirim alır."
+      add: Departman ekle
+      cancel: Vazgeç
+      create: Departman oluştur
+      delete: Sil
+      empty: Henüz departman yok. Bir tane oluşturup üye ekleyin ve kategorileri bağlayın.
+      load_error: Departmanlar yüklenemedi. Lütfen tekrar deneyin.
+      created: Departman oluşturuldu.
+      deleted: Departman silindi ve bağlı kategorilerin bağlantısı kaldırıldı.
+      save_error: Departman kaydedilemedi.
+      delete_error: Departman silinemedi.
+      confirm_delete: "{name} departmanını silmek istediğinizden emin misiniz? Bağlı kategorilerin departman bağlantısı kaldırılacak ve genel destek ekibine dönecektir."
+      field_name: Ad
+      field_slug: Kısa ad (slug)
+      field_slug_help: Küçük harf, rakam ve tire içeren URL dostu tanımlayıcı.
+      field_description: Açıklama
+      field_active: Etkin
+      field_active_help: Etkin olmayan departmanlara yeni bilet gitmez; kategorileri genel destek ekibine döner.
+      option_inactive: "{name} (etkin değil)"
+      members: Üyeler
+      members_count: "{count} üye"
+      members_none: Üye yok
+      members_title: "Üyeler — {name}"
+      members_help: Departman üyeleri, bağlı kategorilerdeki biletler için bildirim alır ve yeni biletler önce onlara atanır. Biletleri açabilmeleri için destek izinlerine (veya destek ekibi grubuna) sahip olduklarından emin olun.
+      members_label: Seçili üyeler
+      members_empty: Henüz üye yok. Eklemek için yukarıdan kullanıcı arayın.
+      members_search_placeholder: Ad veya kullanıcı adıyla ara...
+      members_search_empty: Kullanıcı bulunamadı.
+      search_error: Kullanıcı araması başarısız oldu. Lütfen tekrar deneyin.
+      member_add: Ekle
+      member_added: Eklendi
+      member_remove: Çıkar
+      members_save: Üyeleri kaydet
+      members_cancel: Vazgeç
+      members_saved: Departman üyeleri kaydedildi.
+      members_save_error: Üyeler kaydedilemedi.
     forms:
       title: Bilet form alanları
       help: "HESK tarzında bilet formuna kendi alanlarınızı ekleyin. Kullanıcılar bilet açarken bu alanları doldurur ve yanıtlar biletin içinde gösterilir."
@@ -103,6 +144,8 @@ cengizkemec-support:
     stat_closed: Kapalı
     category: Kategori
     category_none: Kategori seçin
+    department: Departman
+    category_department_hint: "Bu kategori {department} departmanı tarafından yanıtlanır."
     subject: Konu
     subject_placeholder: Sorununuzu kısaca özetleyin
     message: Mesaj

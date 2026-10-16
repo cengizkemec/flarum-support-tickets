@@ -35,14 +35,7 @@ class SendTicketNotifications
         }
 
         // Notify the owning department only (when configured) to limit noise.
-        $departmentId = null;
-        try {
-            $departmentId = $ticket->category ? $ticket->category->department_id : null;
-        } catch (\Throwable $e) {
-            $departmentId = null;
-        }
-
-        $recipients = $this->staffRecipients($departmentId)
+        $recipients = $this->staffRecipients($this->departmentId($ticket))
             ->reject(fn (User $user) => $user->id === $ticket->user_id);
 
         if ($recipients->isNotEmpty()) {
@@ -75,8 +68,7 @@ class SendTicketNotifications
             }
         } else {
             // The requester replied: notify staff so the ticket does not stall.
-            $departmentId = $ticket->category ? $ticket->category->department_id : null;
-            $recipients = $recipients->merge($this->staffRecipients($departmentId));
+            $recipients = $recipients->merge($this->staffRecipients($this->departmentId($ticket)));
         }
 
         // Always notify the assignee (when someone other than the author is assigned).
@@ -104,6 +96,20 @@ class SendTicketNotifications
     protected function notificationsEnabled(): bool
     {
         return (bool) $this->settings->get('cengizkemec-support.email_notifications', true);
+    }
+
+    /**
+     * The department that should receive this ticket's notifications, if any.
+     */
+    protected function departmentId(Ticket $ticket): ?int
+    {
+        try {
+            return $this->staff->departmentForCategory(
+                $ticket->category_id ? (int) $ticket->category_id : null
+            );
+        } catch (\Throwable $e) {
+            return null;
+        }
     }
 
     /**

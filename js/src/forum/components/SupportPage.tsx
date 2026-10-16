@@ -32,7 +32,7 @@ export default class SupportPage extends Page {
     }
 
     app.store
-      .find('tickets', { sort: '-createdAt', include: 'category,assignee,user,replies' })
+      .find('tickets', { sort: '-createdAt', include: 'category.department,assignee,user,replies' })
       .then(() => {
         this.loading = false;
         m.redraw();

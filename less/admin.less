@@ -103,3 +103,82 @@
     -webkit-overflow-scrolling: touch;
   }
 }
+
+// --- Department members modal -------------------------------------------------
+
+.DepartmentMembersModal {
+  .DepartmentMembers-chips {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .DepartmentMembers-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 3px 9px 3px 4px;
+    background: var(--control-bg);
+    border-radius: 999px;
+    font-size: 13px;
+
+    .Avatar {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+    }
+  }
+
+  .DepartmentMembers-chipRemove {
+    background: none;
+    border: 0;
+    padding: 2px 4px;
+    cursor: pointer;
+    color: var(--muted-color, var(--control-color));
+    line-height: 1;
+
+    &:hover {
+      color: var(--error-color, #d83e3e);
+    }
+  }
+
+  .DepartmentMembers-results {
+    list-style: none;
+    margin: 0 0 16px;
+    padding: 0;
+    max-height: 240px;
+    overflow-y: auto;
+  }
+
+  .DepartmentMembers-result {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--control-bg);
+
+    &:last-child {
+      border-bottom: 0;
+    }
+
+    .Avatar {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+    }
+  }
+
+  .DepartmentMembers-resultName {
+    flex: 1;
+    word-break: break-word;
+  }
+
+  .DepartmentMembers-loading {
+    padding: 10px 0;
+    text-align: center;
+  }
+}
+

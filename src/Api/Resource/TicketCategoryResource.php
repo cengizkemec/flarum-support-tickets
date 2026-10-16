@@ -37,9 +37,13 @@ class TicketCategoryResource extends AbstractDatabaseResource
             Schema\Str::make('name')->requiredOnCreate()->writable(),
             Schema\Str::make('slug')->writable()->unique('ticket_categories', 'slug', true),
             Schema\Str::make('description')->writable()->nullable(),
-            Schema\Integer::make('departmentId')->writable(),
+            // Nullable so the administrator can unlink a category from its
+            // department again (the panel sends null).
+            Schema\Integer::make('departmentId')->writable()->nullable(),
             Schema\Integer::make('position')->writable(),
             Schema\Boolean::make('isActive')->writable(),
+
+            Schema\Relationship\ToOne::make('department')->type('support-departments')->includable(),
         ];
     }
 }

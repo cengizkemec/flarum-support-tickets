@@ -33,7 +33,7 @@ export default class CreateTicketModal extends Modal {
   oninit(vnode: any) {
     super.oninit(vnode);
 
-    app.store.find('ticket-categories').then((cats) => {
+    app.store.find('ticket-categories', { include: 'department' }).then((cats) => {
       this.categories = (cats as any[]).filter((c: any) => c.isActive());
       m.redraw();
     });
@@ -229,6 +229,12 @@ export default class CreateTicketModal extends Modal {
               ))}
             </select>
             {selected && selected.description() && <div className="TicketCategoryHint">{selected.description()}</div>}
+            {selected && selected.department && selected.department() && (
+              <div className="TicketCategoryHint TicketCategoryHint--department">
+                <i className="icon fas fa-building" />{' '}
+                {T('category_department_hint', { department: selected.department().name() })}
+              </div>
+            )}
           </div>
 
           <div className="Form-group">

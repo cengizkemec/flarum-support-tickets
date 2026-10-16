@@ -66,23 +66,13 @@ class TicketStaff
     }
 
     /**
-     * Every user that belongs to the support team.
-     *
-     * @return \Illuminate\Support\Collection<int, User>
-     */
-    /**
      * Department-aware member list. When a department has explicit user ids, only
      * those users are returned (broadcast is targeted instead of every staff).
      */
     public function members(?int $departmentId = null)
     {
         if ($departmentId) {
-            try {
-                $department = \Cengizkemec\SupportTickets\Model\SupportDepartment::find($departmentId);
-            } catch (\Throwable $e) {
-                $department = null;
-            }
-
+            $department = $this->findDepartment($departmentId);
             $ids = $department ? $department->members() : [];
 
             if (! empty($ids)) {
@@ -100,18 +90,59 @@ class TicketStaff
             ->get();
     }
 
+    /**
+     * The department a category routes its tickets to, if any.
+     */
+    public function departmentForCategory(?int $categoryId): ?int
+    {
+        if (! $categoryId) {
+            return null;
+        }
+
+        try {
+            $category = \Cengizkemec\SupportTickets\Model\TicketCategory::find($categoryId);
+        } catch (\Throwable $e) {
+            return null;
+        }
+
+        if (! $category || ! $category->department_id) {
+            return null;
+        }
+
+        $department = $this->findDepartment((int) $category->department_id);
+
+        // A disabled department must not receive tickets: fall back to the
+        // general support team instead.
+        if (! $department || ! $department->is_active) {
+            return null;
+        }
+
+        return (int) $department->id;
+    }
+
+    protected function findDepartment(int $id): ?\Cengizkemec\SupportTickets\Model\SupportDepartment
+    {
+        try {
+            return \Cengizkemec\SupportTickets\Model\SupportDepartment::find($id);
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
 
     /**
      * Pick the team member with the fewest still-open tickets so the load is
-     * spread evenly. Returns null when the team is empty.
+     * spread evenly. When a department is given, only its members are
+     * considered (falling back to the whole team when it has none).
+     * Returns null when the team is empty.
      */
-    public function pickAssignee(): ?User
+    public function pickAssignee(?int $departmentId = null): ?User
     {
         if (! $this->autoAssignEnabled()) {
             return null;
         }
 
-        $members = $this->members();
+        $members = $this->members($departmentId);
 
         if ($members->isEmpty()) {
             return null;

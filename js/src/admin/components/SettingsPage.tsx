@@ -6,9 +6,11 @@ import LoadingIndicator from 'flarum/common/components/LoadingIndicator';
 import Switch from 'flarum/common/components/Switch';
 import extractText from 'flarum/common/utils/extractText';
 import type Mithril from 'mithril';
+import SupportDepartment from '../../common/models/SupportDepartment';
 import TicketCategory from '../../common/models/TicketCategory';
 import TicketFormField from '../../common/models/TicketFormField';
 import { fieldName, slugify } from '../../common/utils/slug';
+import DepartmentMembersModal from './DepartmentMembersModal';
 
 // Kept exported for backwards compatibility with the forum bundle.
 export { slugify };
@@ -18,10 +20,28 @@ interface CategoryDraft {
   slug: string;
   slugTouched: boolean;
   description: string;
+  departmentId: string;
   isActive: boolean;
 }
 
 const emptyDraft = (): CategoryDraft => ({
+  name: '',
+  slug: '',
+  slugTouched: false,
+  description: '',
+  departmentId: '',
+  isActive: true,
+});
+
+interface DepartmentDraft {
+  name: string;
+  slug: string;
+  slugTouched: boolean;
+  description: string;
+  isActive: boolean;
+}
+
+const emptyDepartmentDraft = (): DepartmentDraft => ({
   name: '',
   slug: '',
   slugTouched: false,
@@ -63,6 +83,15 @@ export default class SettingsPage extends ExtensionPage {
   loadingCategories = true;
   categoriesError = false;
 
+  /** Departments group the support team and route categories to them. */
+  departments: SupportDepartment[] = [];
+  loadingDepartments = true;
+  departmentsError = false;
+  showDepartmentForm = false;
+  creatingDepartment = false;
+  departmentDraft: DepartmentDraft = emptyDepartmentDraft();
+  busyDepartmentId: string | null = null;
+
   showForm = false;
   creating = false;
   draft: CategoryDraft = emptyDraft();
@@ -83,8 +112,30 @@ export default class SettingsPage extends ExtensionPage {
 
   oninit(vnode: any) {
     super.oninit(vnode);
+    this.loadDepartments();
     this.loadCategories();
     this.loadFormFields();
+  }
+
+  async loadDepartments() {
+    this.loadingDepartments = true;
+    this.departmentsError = false;
+    m.redraw();
+
+    try {
+      const result = await app.store.find('support-departments');
+      const list = Array.isArray(result) ? result : [];
+
+      this.departments = (list.filter(Boolean) as SupportDepartment[]).sort((a, b) =>
+        String(a.name()).localeCompare(String(b.name()))
+      );
+    } catch (e) {
+      this.departments = [];
+      this.departmentsError = true;
+    } finally {
+      this.loadingDepartments = false;
+      m.redraw();
+    }
   }
 
   async loadFormFields() {
@@ -185,6 +236,24 @@ export default class SettingsPage extends ExtensionPage {
     return options;
   }
 
+  /**
+   * Options for the "department" selects. The empty value means "no
+   * department": the category keeps using the general support team.
+   */
+  protected departmentOptions(): Record<string, string> {
+    const options: Record<string, string> = {
+      '': app.translator.trans('cengizkemec-support.admin.categories.department_none') as string,
+    };
+
+    this.departments.forEach((department) => {
+      options[String(department.id())] = department.isActive()
+        ? department.name()
+        : extractText(app.translator.trans('cengizkemec-support.admin.departments.option_inactive', { name: department.name() }) as any);
+    });
+
+    return options;
+  }
+
   content() {
     return (
       <div className="ExtensionPage-settings">
@@ -192,6 +261,8 @@ export default class SettingsPage extends ExtensionPage {
         <div className="container SupportAdmin">
           <hr className="SupportAdmin-divider" />
           {this.formsSection()}
+          <hr className="SupportAdmin-divider" />
+          {this.departmentsSection()}
           <hr className="SupportAdmin-divider" />
           {this.categoriesSection()}
         </div>
@@ -623,6 +694,312 @@ export default class SettingsPage extends ExtensionPage {
     }
   }
 
+  /**
+   * Departments: the groups of people that answer tickets. Categories point at
+   * a department so tickets are routed (assignment + notifications) to its
+   * members.
+   */
+  protected departmentsSection() {
+    return (
+      <div className="SupportAdmin-section">
+        <div className="SupportAdmin-header">
+          <div className="SupportAdmin-headerText">
+            <h3 className="ExtensionPage-subHeader">
+              {app.translator.trans('cengizkemec-support.admin.departments.title')}
+            </h3>
+            <p className="helpText">{app.translator.trans('cengizkemec-support.admin.departments.help')}</p>
+          </div>
+
+          <Button
+            className="Button Button--primary"
+            icon={this.showDepartmentForm ? 'fas fa-times' : 'fas fa-plus'}
+            disabled={this.loadingDepartments}
+            onclick={() => {
+              this.showDepartmentForm = !this.showDepartmentForm;
+              if (this.showDepartmentForm) this.departmentDraft = emptyDepartmentDraft();
+              m.redraw();
+            }}
+          >
+            {this.showDepartmentForm
+              ? app.translator.trans('cengizkemec-support.admin.departments.cancel')
+              : app.translator.trans('cengizkemec-support.admin.departments.add')}
+          </Button>
+        </div>
+
+        {this.showDepartmentForm && this.departmentForm()}
+
+        {this.departmentsBody()}
+      </div>
+    );
+  }
+
+  protected departmentForm() {
+    const draft = this.departmentDraft;
+    const valid = !!draft.name.trim() && !!slugify(draft.slug || draft.name).length;
+
+    return (
+      <div className="Form SupportAdmin-form">
+        <div className="Form-group">
+          <label>{app.translator.trans('cengizkemec-support.admin.departments.field_name')}</label>
+          <input
+            className="FormControl"
+            value={draft.name}
+            oninput={(event: Event) => {
+              draft.name = (event.target as HTMLInputElement).value;
+              if (!draft.slugTouched) draft.slug = slugify(draft.name);
+            }}
+          />
+        </div>
+
+        <div className="Form-group">
+          <label>{app.translator.trans('cengizkemec-support.admin.departments.field_slug')}</label>
+          <input
+            className="FormControl"
+            value={draft.slug}
+            oninput={(event: Event) => {
+              draft.slug = (event.target as HTMLInputElement).value;
+              draft.slugTouched = true;
+            }}
+          />
+          <p className="helpText">
+            {app.translator.trans('cengizkemec-support.admin.departments.field_slug_help', {
+              slug: slugify(draft.slug || draft.name) || '-',
+            })}
+          </p>
+        </div>
+
+        <div className="Form-group">
+          <label>{app.translator.trans('cengizkemec-support.admin.departments.field_description')}</label>
+          <textarea
+            className="FormControl"
+            rows={2}
+            value={draft.description}
+            oninput={(event: Event) => {
+              draft.description = (event.target as HTMLTextAreaElement).value;
+            }}
+          />
+        </div>
+
+        <div className="Form-group">
+          <Switch state={draft.isActive} onchange={(value: boolean) => (draft.isActive = value)}>
+            {app.translator.trans('cengizkemec-support.admin.departments.field_active')}
+          </Switch>
+          <p className="helpText">
+            {app.translator.trans('cengizkemec-support.admin.departments.field_active_help')}
+          </p>
+        </div>
+
+        <div className="Form-group Form-controls">
+          <Button
+            className="Button Button--primary"
+            icon="fas fa-plus"
+            loading={this.creatingDepartment}
+            disabled={this.creatingDepartment || !valid}
+            onclick={() => this.createDepartment()}
+          >
+            {app.translator.trans('cengizkemec-support.admin.departments.create')}
+          </Button>
+
+          <Button
+            className="Button"
+            disabled={this.creatingDepartment}
+            onclick={() => {
+              this.showDepartmentForm = false;
+              this.departmentDraft = emptyDepartmentDraft();
+              m.redraw();
+            }}
+          >
+            {app.translator.trans('cengizkemec-support.admin.departments.cancel')}
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  protected departmentsBody() {
+    if (this.loadingDepartments) {
+      return (
+        <div className="SupportAdmin-state">
+          <LoadingIndicator />
+        </div>
+      );
+    }
+
+    if (this.departmentsError) {
+      return (
+        <div className="SupportAdmin-state">
+          <div className="Alert Alert--warning">
+            <span className="Alert-body">
+              {app.translator.trans('cengizkemec-support.admin.departments.load_error')}
+            </span>
+          </div>
+        </div>
+      );
+    }
+
+    if (!this.departments.length) {
+      return (
+        <div className="SupportAdmin-state">
+          <p className="helpText">{app.translator.trans('cengizkemec-support.admin.departments.empty')}</p>
+        </div>
+      );
+    }
+
+    return (
+      <table className="SupportAdmin-table">
+        <thead>
+          <tr>
+            <th>{app.translator.trans('cengizkemec-support.admin.departments.field_name')}</th>
+            <th>{app.translator.trans('cengizkemec-support.admin.departments.field_slug')}</th>
+            <th>{app.translator.trans('cengizkemec-support.admin.departments.field_description')}</th>
+            <th>{app.translator.trans('cengizkemec-support.admin.departments.members')}</th>
+            <th>{app.translator.trans('cengizkemec-support.admin.departments.field_active')}</th>
+            <th className="SupportAdmin-actionsColumn" />
+          </tr>
+        </thead>
+        <tbody>{this.departments.map((department) => this.renderDepartmentRow(department))}</tbody>
+      </table>
+    );
+  }
+
+  protected renderDepartmentRow(department: SupportDepartment) {
+    const id = String(department.id());
+    const busy = this.busyDepartmentId === id;
+    const memberCount = Number(department.memberCount ? department.memberCount() : 0);
+
+    return (
+      <tr key={id}>
+        <td>
+          <strong>{department.name()}</strong>
+        </td>
+        <td>
+          <code>{department.slug()}</code>
+        </td>
+        <td className="SupportAdmin-description">{department.description() || '—'}</td>
+        <td className="SupportAdmin-position">
+          <Button
+            className="Button Button--small"
+            icon="fas fa-users"
+            disabled={busy}
+            onclick={() => this.openMembers(department)}
+          >
+            {memberCount
+              ? app.translator.trans('cengizkemec-support.admin.departments.members_count', { count: memberCount })
+              : app.translator.trans('cengizkemec-support.admin.departments.members_none')}
+          </Button>
+        </td>
+        <td>
+          <Switch state={!!department.isActive()} loading={busy} onchange={() => this.toggleDepartmentActive(department)} />
+        </td>
+        <td className="SupportAdmin-actionsColumn">
+          <Button
+            className="Button Button--danger Button--small"
+            icon="fas fa-trash-alt"
+            loading={busy}
+            disabled={busy}
+            onclick={() => this.deleteDepartment(department)}
+          >
+            {app.translator.trans('cengizkemec-support.admin.departments.delete')}
+          </Button>
+        </td>
+      </tr>
+    );
+  }
+
+  openMembers(department: SupportDepartment) {
+    app.modal.show(DepartmentMembersModal, {
+      department,
+      onsave: () => this.loadDepartments(),
+    } as any);
+  }
+
+  async createDepartment() {
+    const name = this.departmentDraft.name.trim();
+    const slug = slugify(this.departmentDraft.slug || name);
+
+    if (!name || !slug) return;
+
+    this.creatingDepartment = true;
+    m.redraw();
+
+    try {
+      await app.store.createRecord('support-departments').save({
+        name,
+        slug,
+        description: this.departmentDraft.description.trim() || null,
+        isActive: this.departmentDraft.isActive,
+      });
+
+      this.departmentDraft = emptyDepartmentDraft();
+      this.showDepartmentForm = false;
+
+      app.alerts.show(
+        { type: 'success' },
+        app.translator.trans('cengizkemec-support.admin.departments.created')
+      );
+
+      await this.loadDepartments();
+    } catch (e) {
+      this.showError(e, 'cengizkemec-support.admin.departments.save_error');
+    } finally {
+      this.creatingDepartment = false;
+      m.redraw();
+    }
+  }
+
+  async toggleDepartmentActive(department: SupportDepartment) {
+    const id = String(department.id());
+
+    this.busyDepartmentId = id;
+    m.redraw();
+
+    try {
+      await department.save({ isActive: !department.isActive() });
+    } catch (e) {
+      this.showError(e, 'cengizkemec-support.admin.departments.save_error');
+      await this.loadDepartments();
+    } finally {
+      this.busyDepartmentId = null;
+      m.redraw();
+    }
+  }
+
+  async deleteDepartment(department: SupportDepartment) {
+    const id = String(department.id());
+    const name = department.name();
+
+    const confirmed = confirm(
+      extractText(
+        app.translator.trans('cengizkemec-support.admin.departments.confirm_delete', { name })
+      )
+    );
+
+    if (!confirmed) return;
+
+    this.busyDepartmentId = id;
+    m.redraw();
+
+    try {
+      await department.delete();
+
+      this.departments = this.departments.filter((item) => String(item.id()) !== id);
+
+      // Categories that pointed at this department were unlinked server-side.
+      await this.loadCategories();
+
+      app.alerts.show(
+        { type: 'success' },
+        app.translator.trans('cengizkemec-support.admin.departments.deleted')
+      );
+    } catch (e) {
+      this.showError(e, 'cengizkemec-support.admin.departments.delete_error');
+      await this.loadDepartments();
+    } finally {
+      this.busyDepartmentId = null;
+      m.redraw();
+    }
+  }
+
   protected categoriesSection() {
     return (
       <div className="SupportAdmin-section">
@@ -705,6 +1082,24 @@ export default class SettingsPage extends ExtensionPage {
         </div>
 
         <div className="Form-group">
+          <label>{app.translator.trans('cengizkemec-support.admin.categories.field_department')}</label>
+          <select
+            className="FormControl"
+            value={draft.departmentId}
+            onchange={(event: Event) => {
+              draft.departmentId = (event.target as HTMLSelectElement).value;
+            }}
+          >
+            {Object.entries(this.departmentOptions()).map(([value, label]) => (
+              <option value={value}>{label}</option>
+            ))}
+          </select>
+          <p className="helpText">
+            {app.translator.trans('cengizkemec-support.admin.categories.field_department_help')}
+          </p>
+        </div>
+
+        <div className="Form-group">
           <Switch state={draft.isActive} onchange={(value: boolean) => (draft.isActive = value)}>
             {app.translator.trans('cengizkemec-support.admin.categories.field_active')}
           </Switch>
@@ -778,6 +1173,7 @@ export default class SettingsPage extends ExtensionPage {
             <th>{app.translator.trans('cengizkemec-support.admin.categories.field_name')}</th>
             <th>{app.translator.trans('cengizkemec-support.admin.categories.field_slug')}</th>
             <th>{app.translator.trans('cengizkemec-support.admin.categories.field_description')}</th>
+            <th>{app.translator.trans('cengizkemec-support.admin.categories.field_department')}</th>
             <th>{app.translator.trans('cengizkemec-support.admin.categories.position')}</th>
             <th>{app.translator.trans('cengizkemec-support.admin.categories.field_active')}</th>
             <th className="SupportAdmin-actionsColumn" />
@@ -801,6 +1197,18 @@ export default class SettingsPage extends ExtensionPage {
           <code>{category.slug()}</code>
         </td>
         <td className="SupportAdmin-description">{category.description() || '—'}</td>
+        <td>
+          <select
+            className="FormControl"
+            value={category.departmentId() ? String(category.departmentId()) : ''}
+            disabled={busy}
+            onchange={(event: Event) => this.assignDepartment(category, (event.target as HTMLSelectElement).value)}
+          >
+            {Object.entries(this.departmentOptions()).map(([value, label]) => (
+              <option value={value}>{label}</option>
+            ))}
+          </select>
+        </td>
         <td className="SupportAdmin-position">
           <input className="FormControl" style={{width:'62px'}} type="number" value={Number(category.attribute('position')) || 0} onChange={(e) => {
             const pos = Number((e.target as HTMLInputElement).value) || 0;
@@ -841,6 +1249,7 @@ export default class SettingsPage extends ExtensionPage {
         name,
         slug,
         description: this.draft.description.trim() || null,
+        departmentId: this.draft.departmentId ? Number(this.draft.departmentId) : null,
         position: this.nextPosition(),
         isActive: this.draft.isActive,
       });
@@ -872,6 +1281,27 @@ export default class SettingsPage extends ExtensionPage {
       await category.save({ isActive: !category.isActive() });
     } catch (e) {
       // Roll back to the server state so the switch never lies about the value.
+      this.showError(e, 'cengizkemec-support.admin.categories.save_error');
+      await this.loadCategories();
+    } finally {
+      this.busyCategoryId = null;
+      m.redraw();
+    }
+  }
+
+  /**
+   * Point a category at a department (or unlink it) straight from the table
+   * row; the select saves on change.
+   */
+  async assignDepartment(category: TicketCategory, value: string) {
+    const id = String(category.id());
+
+    this.busyCategoryId = id;
+    m.redraw();
+
+    try {
+      await category.save({ departmentId: value ? Number(value) : null });
+    } catch (e) {
       this.showError(e, 'cengizkemec-support.admin.categories.save_error');
       await this.loadCategories();
     } finally {

@@ -17,7 +17,7 @@ cengizkemec-support:
       manage: Manage support tickets
     categories:
       title: Ticket categories
-      help: Categories help users pick the right department when they open a ticket.
+      help: Categories help users pick the right department when they open a ticket. Link a category to a department to route its tickets.
       add: Add category
       cancel: Cancel
       create: Create category
@@ -34,8 +34,49 @@ cengizkemec-support:
       field_slug: Slug
       field_slug_help: URL-friendly identifier using lowercase letters, numbers and dashes.
       field_description: Description
+      field_department: Department
+      field_department_help: Tickets in this category are routed to the department's members for assignment and notifications. Leave as "No department" to use the general support team.
+      department_none: "— No department —"
       field_active: Active
       field_active_help: Inactive categories are hidden when users open a ticket.
+    departments:
+      title: Departments
+      help: "Split your support team into departments, add the people that belong to each one, then link categories to them. New tickets are assigned to the department's members and only they get notified."
+      add: Add department
+      cancel: Cancel
+      create: Create department
+      delete: Delete
+      empty: No departments yet. Create one, add members and link categories to it.
+      load_error: Departments could not be loaded. Please try again.
+      created: Department created.
+      deleted: Department deleted and its categories were unlinked.
+      save_error: The department could not be saved.
+      delete_error: The department could not be deleted.
+      confirm_delete: "Are you sure you want to delete {name}? Categories linked to it will be unlinked and fall back to the general support team."
+      field_name: Name
+      field_slug: Slug
+      field_slug_help: URL-friendly identifier using lowercase letters, numbers and dashes.
+      field_description: Description
+      field_active: Active
+      field_active_help: Inactive departments no longer receive tickets; their categories fall back to the general support team.
+      option_inactive: "{name} (inactive)"
+      members: Members
+      members_count: "{count} members"
+      members_none: No members
+      members_title: "Members — {name}"
+      members_help: Department members receive notifications for tickets in linked categories, and new tickets are assigned to them first. Make sure they hold support permissions (or are in the support team group) so they can open the tickets.
+      members_label: Selected members
+      members_empty: No members yet. Search for users above to add them.
+      members_search_placeholder: Search users by name or username...
+      members_search_empty: No users found.
+      search_error: The user search failed. Please try again.
+      member_add: Add
+      member_added: Added
+      member_remove: Remove
+      members_save: Save members
+      members_cancel: Cancel
+      members_saved: Department members saved.
+      members_save_error: The members could not be saved.
     forms:
       title: Ticket form fields
       help: "Add your own fields to the ticket form, HESK style. Users fill them in when they open a ticket and the answers are shown inside the ticket."
@@ -103,6 +144,8 @@ cengizkemec-support:
     stat_closed: Closed
     category: Category
     category_none: Select a category
+    department: Department
+    category_department_hint: "This category is handled by the {department} department."
     subject: Subject
     subject_placeholder: Briefly describe your issue
     message: Message

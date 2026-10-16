@@ -2,6 +2,7 @@ import Extend from 'flarum/common/extenders';
 import SupportPage from './components/SupportPage';
 import TicketPage from './components/TicketPage';
 import { NewTicketNotification, TicketReplyNotification } from './components/TicketNotifications';
+import SupportDepartment from '../common/models/SupportDepartment';
 import Ticket from '../common/models/Ticket';
 import TicketCategory from '../common/models/TicketCategory';
 import TicketFormField from '../common/models/TicketFormField';
@@ -20,6 +21,7 @@ export default [
   new Extend.Store()
     .add('tickets', Ticket)
     .add('ticket-categories', TicketCategory)
+    .add('support-departments', SupportDepartment)
     .add('ticket-form-fields', TicketFormField)
     .add('ticket-replies', TicketReply),
 

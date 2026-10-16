@@ -59,6 +59,11 @@ export default class TicketList extends Component {
                 <i className="icon fas fa-folder" /> {category.name()}
               </span>
             )}
+            {category && category.department && category.department() && (
+              <span className="SupportChip">
+                <i className="icon fas fa-building" /> {category.department().name()}
+              </span>
+            )}
             <span className="SupportChip">
               <i className="icon far fa-clock" /> {formatDateTime(ticket.createdAt())}
             </span>

@@ -46,7 +46,7 @@ export default class TicketPage extends Page {
 
   load(id: any) {
     app.store
-      .find('tickets', id, { include: 'replies,replies.user,category,assignee,user' })
+      .find('tickets', id, { include: 'replies,replies.user,category.department,assignee,user' })
       .then((ticket) => {
         this.ticket = ticket;
         this.loading = false;
@@ -180,6 +180,11 @@ export default class TicketPage extends Page {
           {category && (
             <span className="SupportChip">
               <i className="icon fas fa-folder" /> {category.name()}
+            </span>
+          )}
+          {category && category.department && category.department() && (
+            <span className="SupportChip">
+              <i className="icon fas fa-building" /> {T('department')}: {category.department().name()}
             </span>
           )}
           <span className="SupportChip">

@@ -106,10 +106,18 @@ class TicketResource extends AbstractDatabaseResource
         $model->custom_fields = TicketCustomFields::sanitize($submitted, $model->category_id ? (int) $model->category_id : null);
 
         // Hand brand new tickets straight to the support team so nothing sits
-        // unclaimed. Only when it was not already assigned by a staff member.
+        // unclaimed. When the category is linked to a department, the ticket is
+        // assigned inside that department. Only when it was not already
+        // assigned by a staff member.
         if (! $model->assigned_to) {
             try {
-                $assignee = resolve(TicketStaff::class)->pickAssignee();
+                $staff = resolve(TicketStaff::class);
+
+                $departmentId = $staff->departmentForCategory(
+                    $model->category_id ? (int) $model->category_id : null
+                );
+
+                $assignee = $staff->pickAssignee($departmentId);
                 if ($assignee) {
                     $model->assigned_to = $assignee->id;
                 }

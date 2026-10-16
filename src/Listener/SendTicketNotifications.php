@@ -34,8 +34,15 @@ class SendTicketNotifications
             return;
         }
 
-        // Notify all staff so someone can pick the ticket up, but never the creator.
-        $recipients = $this->staffRecipients()
+        // Notify the owning department only (when configured) to limit noise.
+        $departmentId = null;
+        try {
+            $departmentId = $ticket->category ? $ticket->category->department_id : null;
+        } catch (\Throwable $e) {
+            $departmentId = null;
+        }
+
+        $recipients = $this->staffRecipients($departmentId)
             ->reject(fn (User $user) => $user->id === $ticket->user_id);
 
         if ($recipients->isNotEmpty()) {
@@ -68,7 +75,8 @@ class SendTicketNotifications
             }
         } else {
             // The requester replied: notify staff so the ticket does not stall.
-            $recipients = $recipients->merge($this->staffRecipients());
+            $departmentId = $ticket->category ? $ticket->category->department_id : null;
+            $recipients = $recipients->merge($this->staffRecipients($departmentId));
         }
 
         // Always notify the assignee (when someone other than the author is assigned).
@@ -103,8 +111,8 @@ class SendTicketNotifications
      *
      * @return Collection<int, User>
      */
-    protected function staffRecipients(): Collection
+    protected function staffRecipients(?int $departmentId = null): Collection
     {
-        return $this->staff->members();
+        return $this->staff->members($departmentId);
     }
 }

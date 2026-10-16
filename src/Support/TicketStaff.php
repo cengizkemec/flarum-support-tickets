@@ -70,14 +70,36 @@ class TicketStaff
      *
      * @return \Illuminate\Support\Collection<int, User>
      */
-    public function members()
+    /**
+     * Department-aware member list. When a department has explicit user ids, only
+     * those users are returned (broadcast is targeted instead of every staff).
+     */
+    public function members(?int $departmentId = null)
     {
+        if ($departmentId) {
+            try {
+                $department = \Cengizkemec\SupportTickets\Model\SupportDepartment::find($departmentId);
+            } catch (\Throwable $e) {
+                $department = null;
+            }
+
+            $ids = $department ? $department->members() : [];
+
+            if (! empty($ids)) {
+                $users = User::query()->whereIn('id', $ids)->get();
+                if ($users->isNotEmpty()) {
+                    return $users;
+                }
+            }
+        }
+
         $groupIds = $this->staffGroupIds();
 
         return User::query()
             ->whereHas('groups', fn ($q) => $q->whereIn('groups.id', $groupIds))
             ->get();
     }
+
 
     /**
      * Pick the team member with the fewest still-open tickets so the load is

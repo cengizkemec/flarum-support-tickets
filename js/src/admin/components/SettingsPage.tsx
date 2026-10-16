@@ -801,7 +801,14 @@ export default class SettingsPage extends ExtensionPage {
           <code>{category.slug()}</code>
         </td>
         <td className="SupportAdmin-description">{category.description() || '—'}</td>
-        <td className="SupportAdmin-position">{Number(category.attribute('position')) || 0}</td>
+        <td className="SupportAdmin-position">
+          <input className="FormControl" style={{width:'62px'}} type="number" value={Number(category.attribute('position')) || 0} onChange={(e) => {
+            const pos = Number((e.target as HTMLInputElement).value) || 0;
+            this.busyCategoryId = String(category.id());
+            m.redraw();
+            category.save({position: pos}).finally(() => { this.busyCategoryId = null; this.loadCategories(); });
+          }} />
+        </td>
         <td>
           <Switch state={!!category.isActive()} loading={busy} onchange={() => this.toggleActive(category)} />
         </td>

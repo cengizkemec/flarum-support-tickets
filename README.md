@@ -90,9 +90,9 @@ Screenshots below were taken on a live Flarum 2.0.1 forum running this extension
 |----------------|-------------|
 | ![Support centre](docs/screenshots/support-center.png) | ![Ticket view](docs/screenshots/ticket-view.png) |
 
-| Notifications | Guest view |
-|---------------|------------|
-| ![Ticket notifications](docs/screenshots/notifications.png) | ![Guest support page](docs/screenshots/guest-support.png) |
+| Notifications |   |
+|---------------|---|
+| ![Ticket notifications](docs/screenshots/notifications.png) |
 
 ---
 

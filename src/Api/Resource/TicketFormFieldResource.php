@@ -23,8 +23,6 @@ class TicketFormFieldResource extends AbstractDatabaseResource
 
     public function scope(object $query, Context $context): void
     {
-        // Staff may manage every field; everybody else only ever needs the
-        // active ones so they can render the ticket form.
         $actor = $context->getActor();
 
         if (! $actor->can('support.manage')) {
@@ -37,9 +35,15 @@ class TicketFormFieldResource extends AbstractDatabaseResource
         return [
             Endpoint\Index::make()->authenticated()->paginate(50, 200)->defaultSort('position'),
             Endpoint\Show::make()->authenticated(),
-            Endpoint\Create::make()->authenticated()->admin(),
-            Endpoint\Update::make()->authenticated()->admin(),
-            Endpoint\Delete::make()->authenticated()->admin(),
+            Endpoint\Create::make()
+                ->authenticated()
+                ->can(fn ($actor) => $actor->isAdmin()),
+            Endpoint\Update::make()
+                ->authenticated()
+                ->can(fn ($actor) => $actor->isAdmin()),
+            Endpoint\Delete::make()
+                ->authenticated()
+                ->can(fn ($actor) => $actor->isAdmin()),
         ];
     }
 

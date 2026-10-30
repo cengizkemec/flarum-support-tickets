@@ -1,6 +1,6 @@
 # Support Tickets for Flarum 2
 
-[![Latest Version](https://img.shields.io/badge/version-1.1.8-blue.svg)](https://github.com/cengizkemec/flarum-support-tickets/releases)
+[![Latest Version](https://img.shields.io/badge/version-1.1.10-blue.svg)](https://github.com/cengizkemec/flarum-support-tickets/releases)
 [![Flarum](https://img.shields.io/badge/flarum-%5E2.0-orange.svg)](https://flarum.org)
 [![PHP](https://img.shields.io/badge/php-%5E8.3-8892bf.svg)](https://www.php.net)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -189,15 +189,24 @@ Deleting a department unlinks its categories first, so nothing points at a depar
 | Field | Notes |
 |-------|-------|
 | **Label** | Shown to users on the ticket form. |
-| **Key** | Internal identifier (letters, numbers, underscores) used as the key in `tickets.custom_fields`. Auto-generated from the label when left empty. |
+| **Key** | Internal identifier (letters, numbers, underscores) used as the key in `tickets.custom_fields`. Auto-generated from the label when left empty; must be unique (case-insensitive) and editable. |
 | **Type** | `text`, `textarea`, `number`, `email`, `url`, `date`, `select`, `radio`, `checkbox`. |
-| **Choices** | For `select` / `radio` / `checkbox`: one choice per line. |
+| **Choices** | For `select` / `radio` / `checkbox`: one choice per line. At least one choice is required; up to 200 choices of 255 characters each. |
 | **Category** | Leave empty for a global field, or pick a category to show it only there. |
-| **Required** | Enforced in the New Ticket form and validated server-side. |
+| **Order** | Ascending position. Lower numbers appear first in the admin list and on the ticket form. |
+| **Required** | Enforced in the New Ticket form and validated server-side; a missing required answer returns HTTP 422. |
 | **Active** | Inactive fields disappear from the form but stored answers stay visible in tickets. |
 
+Every field can be created, edited, activated/deactivated, reordered and deleted from the
+same table. The edit form loads the current values (label, key, type, choices, category,
+order and switches). A duplicate key is rejected before saving, by both the browser and the
+server, and the database unique index is the final guard.
+
 Answers are sanitised server-side per type (numbers coerced, e-mail/URL/date formats checked,
-choices validated against the list) and displayed as label/value rows inside the ticket.
+choices validated against the list, checkbox answers kept as arrays) and displayed as
+label/value rows inside the ticket. Invalid answers are rejected with a readable 422 error
+instead of being silently discarded. A field that is deleted later keeps its stored answers
+visible on existing tickets.
 
 ---
 
@@ -310,7 +319,7 @@ All endpoints are JSON:API resources under `/api` and require authentication whe
 | `DELETE` | `/api/tickets/{id}` | `tickets` | Requires `support.manage`. |
 | `GET` / `POST` | `/api/ticket-categories` | `ticket-categories` | Fields: `name`, `slug` (unique), `description`, `departmentId` (nullable, validated), `position`, `isActive`. The `department` relationship is includable. |
 | `GET` / `POST` / `PATCH` / `DELETE` | `/api/support-departments` | `support-departments` | Admin-only mutations. Fields: `name`, `slug` (unique), `description`, `userIds` (member ids, only serialised for administrators), `isActive`. |
-| `GET` / `POST` / `PATCH` / `DELETE` | `/api/ticket-form-fields` | `ticket-form-fields` | Fields: `label`, `name`, `type`, `options` (array, for `select`/`radio`/`checkbox`), `isRequired`, `isActive`, `position`, `category`. Sortable by `position`. |
+| `GET` / `POST` / `PATCH` / `DELETE` | `/api/ticket-form-fields` | `ticket-form-fields` | Admin-only mutations. Fields: `label`, `name` (unique, auto-generated when empty), `type`, `options` (array, for `select`/`radio`/`checkbox`), `isRequired`, `isActive`, `position`, `category` (nullable relationship). Sortable by `position`. |
 | `GET` / `POST` | `/api/ticket-replies` | `ticket-replies` | The `ticket` relationship is required on create. |
 | `POST` | `/api/support/upload` | — | Multipart file upload; returns the stored filename. |
 | `GET` | `/api/support/attachments/{filename}` | — | Authenticated download; 403/404 on failure. |

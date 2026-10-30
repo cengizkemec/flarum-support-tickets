@@ -34,10 +34,19 @@ export default class CreateTicketModal extends Modal {
   oninit(vnode: any) {
     super.oninit(vnode);
 
-    app.store.find('ticket-categories', { include: 'department' }).then((cats) => {
-      this.categories = (cats as any[]).filter((c: any) => c.isActive());
-      m.redraw();
-    });
+    app.store
+      .find('ticket-categories', { include: 'department' })
+      .then((result) => {
+        const cats = Array.isArray(result) ? result : [];
+        this.categories = cats.filter((c: any) => c.isActive());
+        m.redraw();
+      })
+      .catch(() => {
+        // Never leave the modal without feedback: the standard fields still
+        // work, but the category list is incomplete.
+        this.fieldsError = true;
+        m.redraw();
+      });
 
     app.store
       .find('ticket-form-fields', { sort: 'position', include: 'category' })
@@ -210,6 +219,12 @@ export default class CreateTicketModal extends Modal {
     return (
       <div className="Modal-body">
         <div className="Form">
+          {this.fieldsError && (
+            <div className="Alert Alert--warning">
+              <span className="Alert-body">{T('fields_load_error')}</span>
+            </div>
+          )}
+
           <div className="Form-group">
             <label>{T('subject')}</label>
             <input
@@ -423,7 +438,13 @@ export default class CreateTicketModal extends Modal {
       m.route.set(ticketUrl(ticket));
     } catch (e: any) {
       this.loading = false;
-      app.alerts.show({ type: 'error' }, e?.response?.errors?.[0]?.detail || e?.message || T('error_create'));
+      const detail = Array.isArray(e?.response?.errors)
+        ? e.response.errors
+            .map((item: any) => item?.detail)
+            .filter(Boolean)
+            .join(' ')
+        : '';
+      app.alerts.show({ type: 'error' }, detail || e?.message || T('error_create'));
       m.redraw();
     }
   }

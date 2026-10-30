@@ -172,7 +172,7 @@ export default class SupportPage extends Page {
     const open = tickets.filter((t) => OPEN_STATUSES.indexOf(t.status()) >= 0).length;
     const closed = total - open;
 
-    const tabs: [string, string, number][] = [
+    const tabs: [string, any, number][] = [
       ['all', T('tab_all'), total],
       ['open', T('tab_open'), open],
       ['closed', T('tab_closed'), closed],

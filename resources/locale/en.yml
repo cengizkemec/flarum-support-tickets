@@ -87,6 +87,7 @@ cengizkemec-support:
       edit: Edit
       delete: Delete
       position: Order
+      position_help: Fields are shown in ascending order. Lower numbers appear first.
       empty: No custom fields yet. Add one to extend the ticket form.
       load_error: Fields could not be loaded. Please try again.
       created: Field created.
@@ -95,6 +96,7 @@ cengizkemec-support:
       save_error: The field could not be saved.
       delete_error: The field could not be deleted.
       confirm_delete: "Are you sure you want to delete the field {label}?"
+      name_taken: This key is already used by another field. Choose a different key.
       field_label: Label
       field_label_help: Shown to users on the ticket form.
       field_name: Key
@@ -180,6 +182,7 @@ cengizkemec-support:
     error_status: Failed to update the status.
     error_assign: Failed to assign the ticket.
     error_create: Failed to create the ticket.
+    fields_load_error: The ticket form could not be fully loaded. Please refresh the page and try again.
     error_preferences: Failed to save your notification preference.
     guest_title: Sign in to open a support ticket
     guest_text: You need an account to open a support ticket and follow its progress. Log in or create a free account to get started.

@@ -3,14 +3,16 @@
 namespace Cengizkemec\SupportTickets\Support;
 
 use Cengizkemec\SupportTickets\Model\TicketFormField;
+use Flarum\Foundation\ValidationException;
 
 /**
  * Validates the values submitted for the admin-defined ticket form fields.
  *
  * Only values whose field is currently active *and* applicable to the ticket's
  * category are kept, and the value is coerced to the shape the field type
- * expects. This keeps garbage out of tickets.custom_fields even when the
- * request is crafted by hand.
+ * expects. Missing required answers and invalid choices are rejected with a
+ * 422 response instead of being silently dropped, so the user always knows
+ * why a ticket was not created.
  */
 class TicketCustomFields
 {
@@ -18,82 +20,50 @@ class TicketCustomFields
      * @param array<string, mixed> $submitted  Raw values keyed by field name.
      * @param int|null             $categoryId The category the ticket belongs to.
      * @return array<string, mixed>
+     *
+     * @throws ValidationException
      */
     public static function sanitize(array $submitted, ?int $categoryId): array
     {
-        if (empty($submitted)) {
-            return [];
-        }
-
         $fields = TicketFormField::query()
             ->where('is_active', true)
             ->where(fn ($q) => $q->whereNull('category_id')->orWhere('category_id', $categoryId))
+            ->orderBy('position')
+            ->orderBy('id')
             ->get();
 
         $clean = [];
+        $errors = [];
 
         foreach ($fields as $field) {
             $key = $field->name;
 
-            if (! array_key_exists($key, $submitted)) {
+            if ($key === null || $key === '') {
                 continue;
             }
 
-            $value = $submitted[$key];
+            $submittedValue = array_key_exists($key, $submitted) ? $submitted[$key] : null;
 
-            if ($value === null || $value === '') {
+            if (! array_key_exists($key, $submitted) || self::isEmpty($submittedValue)) {
+                if ($field->is_required) {
+                    $errors[$key] = self::requiredMessage($field);
+                }
+
                 continue;
             }
 
-            switch ($field->type) {
-                case 'checkbox':
-                    if (is_array($value)) {
-                        $value = array_values(array_filter(array_map('strval', $value), fn ($v) => $v !== ''));
-                    } else {
-                        $value = (bool) $value;
-                    }
-                    break;
+            [$value, $error] = self::coerce($field, $submittedValue);
 
-                case 'number':
-                    if (! is_numeric($value)) {
-                        continue 2;
-                    }
-                    $value = $value + 0;
-                    break;
-
-                case 'email':
-                    if (! filter_var($value, FILTER_VALIDATE_EMAIL)) {
-                        continue 2;
-                    }
-                    break;
-
-                case 'url':
-                    if (! filter_var($value, FILTER_VALIDATE_URL)) {
-                        continue 2;
-                    }
-                    break;
-
-                case 'date':
-                    if (! preg_match('/^\d{4}-\d{2}-\d{2}$/', (string) $value)) {
-                        continue 2;
-                    }
-                    break;
-
-                case 'select':
-                case 'radio':
-                    $options = $field->options ?: [];
-                    if (! in_array((string) $value, array_map('strval', $options), true)) {
-                        continue 2;
-                    }
-                    break;
-
-                default:
-                    // text / textarea
-                    $value = mb_substr((string) $value, 0, 5000);
-                    break;
+            if ($error !== null) {
+                $errors[$key] = $error;
+                continue;
             }
 
             $clean[$key] = $value;
+        }
+
+        if ($errors !== []) {
+            throw new ValidationException($errors);
         }
 
         return $clean;
@@ -133,6 +103,145 @@ class TicketCustomFields
         }
 
         return $out;
+    }
+
+    private static function isEmpty(mixed $value): bool
+    {
+        if ($value === null) {
+            return true;
+        }
+
+        if (is_string($value)) {
+            return trim($value) === '';
+        }
+
+        if (is_array($value)) {
+            foreach ($value as $item) {
+                if (! self::isEmpty($item)) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * @return array{0: mixed, 1: string|null} [value, error message]
+     */
+    private static function coerce(TicketFormField $field, mixed $value): array
+    {
+        $label = (string) $field->label;
+
+        switch ($field->type) {
+            case 'checkbox':
+                if (! is_array($value)) {
+                    return [null, sprintf('"%s" must be a list of choices.', $label)];
+                }
+
+                $options = $field->optionsList();
+                $selected = [];
+
+                foreach ($value as $item) {
+                    if (! is_scalar($item)) {
+                        return [null, sprintf('The selected value for "%s" is not valid.', $label)];
+                    }
+
+                    $item = trim((string) $item);
+
+                    if ($item === '') {
+                        continue;
+                    }
+
+                    if (! in_array($item, $options, true)) {
+                        return [null, sprintf('The selected value for "%s" is not valid.', $label)];
+                    }
+
+                    if (! in_array($item, $selected, true)) {
+                        $selected[] = $item;
+                    }
+                }
+
+                if ($selected === []) {
+                    return [null, self::requiredMessage($field)];
+                }
+
+                return [$selected, null];
+
+            case 'select':
+            case 'radio':
+                if (! is_scalar($value)) {
+                    return [null, sprintf('The selected value for "%s" is not valid.', $label)];
+                }
+
+                $value = trim((string) $value);
+
+                if (! in_array($value, $field->optionsList(), true)) {
+                    return [null, sprintf('The selected value for "%s" is not valid.', $label)];
+                }
+
+                return [$value, null];
+
+            case 'number':
+                if (! is_numeric($value) || ! is_finite((float) $value)) {
+                    return [null, sprintf('"%s" must be a number.', $label)];
+                }
+
+                return [$value + 0, null];
+
+            case 'email':
+                if (! is_scalar($value) || ! filter_var((string) $value, FILTER_VALIDATE_EMAIL)) {
+                    return [null, sprintf('"%s" must be a valid email address.', $label)];
+                }
+
+                return [(string) $value, null];
+
+            case 'url':
+                if (! is_scalar($value)) {
+                    return [null, sprintf('"%s" must be a valid URL.', $label)];
+                }
+
+                $value = (string) $value;
+                $scheme = strtolower((string) parse_url($value, PHP_URL_SCHEME));
+
+                if (! filter_var($value, FILTER_VALIDATE_URL) || ! in_array($scheme, ['http', 'https'], true)) {
+                    return [null, sprintf('"%s" must be a valid http(s) URL.', $label)];
+                }
+
+                return [$value, null];
+
+            case 'date':
+                if (! is_scalar($value)) {
+                    return [null, sprintf('"%s" must be a valid date (YYYY-MM-DD).', $label)];
+                }
+
+                $value = (string) $value;
+                $date = \DateTimeImmutable::createFromFormat('!Y-m-d', $value);
+
+                if (! $date || $date->format('Y-m-d') !== $value) {
+                    return [null, sprintf('"%s" must be a valid date (YYYY-MM-DD).', $label)];
+                }
+
+                return [$value, null];
+
+            case 'text':
+            case 'textarea':
+                if (! is_scalar($value)) {
+                    return [null, sprintf('"%s" must be text.', $label)];
+                }
+
+                return [mb_substr((string) $value, 0, 5000), null];
+
+            default:
+                return [null, sprintf('The field "%s" has an unsupported type.', $label)];
+        }
+    }
+
+    private static function requiredMessage(TicketFormField $field): string
+    {
+        return sprintf('"%s" is required.', (string) $field->label);
     }
 
     private static function formatValue(mixed $value): string

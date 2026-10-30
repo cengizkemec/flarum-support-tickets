@@ -4,6 +4,7 @@ namespace Cengizkemec\SupportTickets\Api\Resource;
 
 use Carbon\Carbon;
 use Cengizkemec\SupportTickets\Model\Ticket;
+use Cengizkemec\SupportTickets\Model\TicketCategory;
 use Cengizkemec\SupportTickets\Support\TicketCustomFields;
 use Cengizkemec\SupportTickets\Support\TicketFormat;
 use Cengizkemec\SupportTickets\Support\TicketStaff;
@@ -12,6 +13,7 @@ use Flarum\Api\Endpoint;
 use Flarum\Api\Resource\AbstractDatabaseResource;
 use Flarum\Api\Schema;
 use Flarum\Api\Sort\SortColumn;
+use Flarum\Foundation\ValidationException;
 use Flarum\User\Exception\PermissionDeniedException;
 
 class TicketResource extends AbstractDatabaseResource
@@ -107,6 +109,18 @@ class TicketResource extends AbstractDatabaseResource
         // Only allow attachment filename that looks like our generated names
         if ($model->attachment && !preg_match('/^[a-zA-Z0-9]{40}\.[a-z0-9]+$/', $model->attachment)) {
             $model->attachment = null;
+        }
+
+        // A crafted request must not open a ticket in an inactive (or
+        // non-existent) category; the frontend hides those categories.
+        if ($model->category_id) {
+            $category = TicketCategory::query()->find($model->category_id);
+
+            if (! $category || ! $category->is_active) {
+                throw new ValidationException([
+                    'category' => 'The selected category is not available.',
+                ]);
+            }
         }
 
         // Keep only the values that belong to an active field for this category.

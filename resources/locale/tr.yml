@@ -87,6 +87,7 @@ cengizkemec-support:
       edit: Düzenle
       delete: Sil
       position: Sıra
+      position_help: Alanlar küçükten büyüğe doğru gösterilir. Küçük numaralar önce görünür.
       empty: Henüz özel alan yok. Bilet formunu genişletmek için bir tane ekleyin.
       load_error: Alanlar yüklenemedi. Lütfen tekrar deneyin.
       created: Alan oluşturuldu.
@@ -95,6 +96,7 @@ cengizkemec-support:
       save_error: Alan kaydedilemedi.
       delete_error: Alan silinemedi.
       confirm_delete: "{label} alanını silmek istediğinizden emin misiniz?"
+      name_taken: Bu anahtar başka bir alan tarafından kullanılıyor. Farklı bir anahtar seçin.
       field_label: Etiket
       field_label_help: Kullanıcılara bilet formunda gösterilir.
       field_name: Anahtar
@@ -180,6 +182,7 @@ cengizkemec-support:
     error_status: Durum güncellenemedi.
     error_assign: Bilet atanamadı.
     error_create: Bilet oluşturulamadı.
+    fields_load_error: Bilet formu tam olarak yüklenemedi. Lütfen sayfayı yenileyip tekrar deneyin.
     error_preferences: Bildirim tercihiniz kaydedilemedi.
     guest_title: Destek kaydı açmak için giriş yapın
     guest_text: Destek kaydı oluşturmak ve sürecini takip edebilmek için bir hesabınız olması gerekir. Başlamak için giriş yapın veya ücretsiz bir hesap oluşturun.

@@ -65,6 +65,7 @@ interface FieldDraft {
   isRequired: boolean;
   isActive: boolean;
   categoryId: string;
+  position: number;
 }
 
 const emptyFieldDraft = (): FieldDraft => ({
@@ -76,6 +77,7 @@ const emptyFieldDraft = (): FieldDraft => ({
   isRequired: false,
   isActive: true,
   categoryId: '',
+  position: 1,
 });
 
 export default class SettingsPage extends ExtensionPage {
@@ -103,6 +105,8 @@ export default class SettingsPage extends ExtensionPage {
   showFieldForm = false;
   creatingField = false;
   fieldDraft: FieldDraft = emptyFieldDraft();
+  /** The field being edited, or null when the form creates a new one. */
+  editingFieldId: string | null = null;
 
   /** Id of the category currently being saved/deleted, used for per-row spinners. */
   busyCategoryId: string | null = null;
@@ -147,7 +151,13 @@ export default class SettingsPage extends ExtensionPage {
       const result = await app.store.find('ticket-form-fields', { sort: 'position', include: 'category' });
       const list = Array.isArray(result) ? result : [];
 
-      this.formFields = list.filter(Boolean) as TicketFormField[];
+      // A null entry means the store did not know this resource type. Treat
+      // that as a load failure instead of silently showing an empty list.
+      if (list.some((item) => !item)) {
+        throw new Error('ticket-form-fields could not be deserialized');
+      }
+
+      this.formFields = list as TicketFormField[];
       this.formFields.sort(
         (a, b) => (Number(a.attribute('position')) || 0) - (Number(b.attribute('position')) || 0)
       );
@@ -344,9 +354,11 @@ export default class SettingsPage extends ExtensionPage {
             icon={this.showFieldForm ? 'fas fa-times' : 'fas fa-plus'}
             disabled={this.loadingFields}
             onclick={() => {
-              this.showFieldForm = !this.showFieldForm;
-              if (this.showFieldForm) this.fieldDraft = emptyFieldDraft();
-              m.redraw();
+              if (this.showFieldForm) {
+                this.closeFieldForm();
+              } else {
+                this.openCreateFieldForm();
+              }
             }}
           >
             {this.showFieldForm
@@ -364,12 +376,20 @@ export default class SettingsPage extends ExtensionPage {
 
   protected fieldForm() {
     const draft = this.fieldDraft;
+    const editing = this.editingFieldId !== null;
     const needsOptions = CHOICE_TYPES.indexOf(draft.type) >= 0;
     const options = this.parseOptions(draft.optionsText);
+    const effectiveName = editing
+      ? draft.name.trim() || fieldName(draft.label)
+      : fieldName(draft.name || draft.label);
+    const nameConflict = this.formFields.some(
+      (field) => String(field.id()) !== String(this.editingFieldId) && String(field.name() || '') === effectiveName
+    );
 
     const valid =
       !!draft.label.trim() &&
-      !!fieldName(draft.name || draft.label) &&
+      !!effectiveName &&
+      !nameConflict &&
       (!needsOptions || options.length > 0);
 
     return (
@@ -401,9 +421,14 @@ export default class SettingsPage extends ExtensionPage {
           />
           <p className="helpText">
             {app.translator.trans('cengizkemec-support.admin.forms.field_name_help', {
-              name: fieldName(draft.name || draft.label) || '-',
+              name: effectiveName || '-',
             })}
           </p>
+          {nameConflict && (
+            <p className="helpText SupportAdmin-errorText">
+              {app.translator.trans('cengizkemec-support.admin.forms.name_taken')}
+            </p>
+          )}
         </div>
 
         <div className="Form-group">
@@ -460,6 +485,24 @@ export default class SettingsPage extends ExtensionPage {
         </div>
 
         <div className="Form-group">
+          <label>{app.translator.trans('cengizkemec-support.admin.forms.position')}</label>
+          <input
+            className="FormControl"
+            type="number"
+            min={0}
+            step={1}
+            value={draft.position}
+            oninput={(event: Event) => {
+              const value = parseInt((event.target as HTMLInputElement).value, 10);
+              draft.position = Number.isFinite(value) && value >= 0 ? value : 0;
+            }}
+          />
+          <p className="helpText">
+            {app.translator.trans('cengizkemec-support.admin.forms.position_help')}
+          </p>
+        </div>
+
+        <div className="Form-group">
           <Switch state={draft.isRequired} onchange={(value: boolean) => (draft.isRequired = value)}>
             {app.translator.trans('cengizkemec-support.admin.forms.field_required')}
           </Switch>
@@ -474,22 +517,20 @@ export default class SettingsPage extends ExtensionPage {
         <div className="Form-group Form-controls">
           <Button
             className="Button Button--primary"
-            icon="fas fa-plus"
+            icon={editing ? 'fas fa-save' : 'fas fa-plus'}
             loading={this.creatingField}
             disabled={this.creatingField || !valid}
-            onclick={() => this.createField()}
+            onclick={() => this.saveField()}
           >
-            {app.translator.trans('cengizkemec-support.admin.forms.create')}
+            {editing
+              ? app.translator.trans('cengizkemec-support.admin.forms.save')
+              : app.translator.trans('cengizkemec-support.admin.forms.create')}
           </Button>
 
           <Button
             className="Button"
             disabled={this.creatingField}
-            onclick={() => {
-              this.showFieldForm = false;
-              this.fieldDraft = emptyFieldDraft();
-              m.redraw();
-            }}
+            onclick={() => this.closeFieldForm()}
           >
             {app.translator.trans('cengizkemec-support.admin.forms.cancel')}
           </Button>
@@ -535,6 +576,7 @@ export default class SettingsPage extends ExtensionPage {
             <th>{app.translator.trans('cengizkemec-support.admin.forms.field_name')}</th>
             <th>{app.translator.trans('cengizkemec-support.admin.forms.field_type')}</th>
             <th>{app.translator.trans('cengizkemec-support.admin.forms.field_category')}</th>
+            <th>{app.translator.trans('cengizkemec-support.admin.forms.position')}</th>
             <th>{app.translator.trans('cengizkemec-support.admin.forms.field_required')}</th>
             <th>{app.translator.trans('cengizkemec-support.admin.forms.field_active')}</th>
             <th className="SupportAdmin-actionsColumn" />
@@ -560,11 +602,20 @@ export default class SettingsPage extends ExtensionPage {
         </td>
         <td>{app.translator.trans('cengizkemec-support.admin.forms.type.' + field.type())}</td>
         <td className="SupportAdmin-description">{category ? category.name() : app.translator.trans('cengizkemec-support.admin.forms.category_all')}</td>
+        <td className="SupportAdmin-position">{Number(field.attribute('position')) || 0}</td>
         <td className="SupportAdmin-position">{field.isRequired() ? '✓' : '—'}</td>
         <td>
           <Switch state={!!field.isActive()} loading={busy} onchange={() => this.toggleFieldActive(field)} />
         </td>
         <td className="SupportAdmin-actionsColumn">
+          <Button
+            className="Button Button--small"
+            icon="fas fa-pen"
+            disabled={busy}
+            onclick={() => this.editField(field)}
+          >
+            {app.translator.trans('cengizkemec-support.admin.forms.edit')}
+          </Button>{' '}
           <Button
             className="Button Button--danger Button--small"
             icon="fas fa-trash-alt"
@@ -596,43 +647,94 @@ export default class SettingsPage extends ExtensionPage {
     );
   }
 
-  async createField() {
+  protected openCreateFieldForm() {
+    this.editingFieldId = null;
+    this.fieldDraft = emptyFieldDraft();
+    this.fieldDraft.position = this.nextFieldPosition();
+    this.showFieldForm = true;
+    m.redraw();
+  }
+
+  protected closeFieldForm() {
+    this.showFieldForm = false;
+    this.editingFieldId = null;
+    this.fieldDraft = emptyFieldDraft();
+    m.redraw();
+  }
+
+  protected editField(field: TicketFormField) {
+    const category = field.category();
+
+    this.editingFieldId = String(field.id());
+    this.fieldDraft = {
+      label: field.label() || '',
+      name: field.name() || '',
+      nameTouched: true,
+      type: field.type() || 'text',
+      optionsText: (field.options() || []).join('\n'),
+      isRequired: !!field.isRequired(),
+      isActive: field.isActive() !== false,
+      categoryId: category ? String(category.id()) : '',
+      position: Number(field.attribute('position')) || 0,
+    };
+    this.showFieldForm = true;
+    m.redraw();
+  }
+
+  async saveField() {
     const label = this.fieldDraft.label.trim();
-    const name = fieldName(this.fieldDraft.name || label);
+    const editingId = this.editingFieldId;
+    // When editing, send the key unchanged so a legacy mixed-case key is not
+    // silently rewritten. The server only normalises a key the admin changed.
+    // Clearing the key falls back to a key generated from the label.
+    const name = editingId
+      ? this.fieldDraft.name.trim() || fieldName(label)
+      : fieldName(this.fieldDraft.name || label);
     const needsOptions = CHOICE_TYPES.indexOf(this.fieldDraft.type) >= 0;
     const options = needsOptions ? this.parseOptions(this.fieldDraft.optionsText) : [];
 
     if (!label || !name) return;
     if (needsOptions && !options.length) return;
 
+    const duplicate = this.formFields.some(
+      (field) => String(field.id()) !== String(editingId) && String(field.name() || '') === name
+    );
+
+    if (duplicate) {
+      app.alerts.show(
+        { type: 'error' },
+        app.translator.trans('cengizkemec-support.admin.forms.name_taken')
+      );
+      return;
+    }
+
     this.creatingField = true;
     m.redraw();
 
     try {
-      const data: any = {
+      const attributes: any = {
         label,
         name,
         type: this.fieldDraft.type,
         options,
         isRequired: this.fieldDraft.isRequired,
         isActive: this.fieldDraft.isActive,
-        position: this.nextFieldPosition(),
+        position: this.fieldDraft.position,
       };
 
-      if (this.fieldDraft.categoryId) {
-        data.relationships = {
-          category: app.store.getById('ticket-categories', this.fieldDraft.categoryId),
-        };
-      }
-
-      await app.store.createRecord('ticket-form-fields').save(data);
+      await this.persistField(editingId, attributes);
 
       this.fieldDraft = emptyFieldDraft();
+      this.editingFieldId = null;
       this.showFieldForm = false;
 
       app.alerts.show(
         { type: 'success' },
-        app.translator.trans('cengizkemec-support.admin.forms.created')
+        app.translator.trans(
+          editingId
+            ? 'cengizkemec-support.admin.forms.updated'
+            : 'cengizkemec-support.admin.forms.created'
+        )
       );
 
       await this.loadFormFields();
@@ -644,6 +746,44 @@ export default class SettingsPage extends ExtensionPage {
     }
   }
 
+  /**
+   * Use app.request directly instead of Model.save() because a null category
+   * relationship must be sent explicitly when a field is changed back from a
+   * category-specific field to a global one (Model.save skips null values).
+   */
+  protected async persistField(id: string | null, attributes: any) {
+    const payload: any = {
+      data: {
+        type: 'ticket-form-fields',
+        attributes,
+      },
+    };
+
+    if (id) {
+      payload.data.id = String(id);
+    }
+
+    if (this.fieldDraft.categoryId) {
+      payload.data.relationships = {
+        category: {
+          data: { type: 'ticket-categories', id: String(this.fieldDraft.categoryId) },
+        },
+      };
+    } else if (id) {
+      payload.data.relationships = {
+        category: { data: null },
+      };
+    }
+
+    const response = await app.request({
+      method: id ? 'PATCH' : 'POST',
+      url: app.forum.attribute('apiUrl') + (id ? `/ticket-form-fields/${id}` : '/ticket-form-fields'),
+      body: payload,
+    });
+
+    app.store.pushPayload(response as any);
+  }
+
   async toggleFieldActive(field: TicketFormField) {
     const id = String(field.id());
 
@@ -652,6 +792,10 @@ export default class SettingsPage extends ExtensionPage {
 
     try {
       await field.save({ isActive: !field.isActive() });
+
+      if (this.editingFieldId === id) {
+        this.fieldDraft.isActive = !!field.isActive();
+      }
     } catch (e) {
       this.showError(e, 'cengizkemec-support.admin.forms.save_error');
       await this.loadFormFields();
@@ -680,6 +824,10 @@ export default class SettingsPage extends ExtensionPage {
       await field.delete();
 
       this.formFields = this.formFields.filter((item) => String(item.id()) !== id);
+
+      if (this.editingFieldId === id) {
+        this.closeFieldForm();
+      }
 
       app.alerts.show(
         { type: 'success' },
@@ -1210,7 +1358,7 @@ export default class SettingsPage extends ExtensionPage {
           </select>
         </td>
         <td className="SupportAdmin-position">
-          <input className="FormControl" style={{width:'62px'}} type="number" value={Number(category.attribute('position')) || 0} onChange={(e) => {
+          <input className="FormControl" style={{width:'62px'}} type="number" value={Number(category.attribute('position')) || 0} onChange={(e: Event) => {
             const pos = Number((e.target as HTMLInputElement).value) || 0;
             this.busyCategoryId = String(category.id());
             m.redraw();
@@ -1352,12 +1500,13 @@ export default class SettingsPage extends ExtensionPage {
   }
 
   protected showError(error: any, fallbackKey: string) {
-    const detail =
-      error &&
-      error.response &&
-      Array.isArray(error.response.errors) &&
-      error.response.errors[0] &&
-      error.response.errors[0].detail;
+    const errors = error?.response?.errors;
+    const detail = Array.isArray(errors)
+      ? errors
+          .map((item: any) => item?.detail)
+          .filter(Boolean)
+          .join(' ')
+      : null;
 
     app.alerts.show(
       { type: 'error' },

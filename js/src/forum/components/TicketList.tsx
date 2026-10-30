@@ -9,8 +9,8 @@ const T = (key: string, params?: any) => app.translator.trans('cengizkemec-suppo
 const OPEN_STATUSES = ['new', 'answered', 'pending'];
 
 export default class TicketList extends Component {
-  view() {
-    const filter = this.attrs.filter || 'all';
+  view(vnode: any) {
+    const filter = vnode.attrs.filter || 'all';
 
     let tickets = app.store.all('tickets') as any[];
     if (filter === 'open') {

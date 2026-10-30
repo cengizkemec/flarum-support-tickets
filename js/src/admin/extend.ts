@@ -1,9 +1,10 @@
 import Extend from 'flarum/common/extenders';
 import app from 'flarum/admin/app';
-import SettingsPage from './components/SettingsPage.tsx';
+import SettingsPage from './components/SettingsPage';
 import SupportDepartment from '../common/models/SupportDepartment';
 import Ticket from '../common/models/Ticket';
 import TicketCategory from '../common/models/TicketCategory';
+import TicketFormField from '../common/models/TicketFormField';
 import TicketReply from '../common/models/TicketReply';
 
 export default [
@@ -16,6 +17,7 @@ export default [
     .add('tickets', Ticket)
     .add('ticket-categories', TicketCategory)
     .add('support-departments', SupportDepartment)
+    .add('ticket-form-fields', TicketFormField)
     .add('ticket-replies', TicketReply),
 
   new Extend.Admin()

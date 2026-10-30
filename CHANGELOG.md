@@ -1,5 +1,78 @@
 # Changelog
 
+## 1.1.10 — 2026-10-30
+
+A focused bug-fix release for the HESK-style custom ticket form fields. The feature could be
+configured but not saved from the admin panel; this release fixes the two independent causes,
+finishes the missing edit/reorder/validation paths, and verifies the whole flow end to end on
+Flarum 2.0.2 (PHP 8.4, SQLite) through both the API and the real admin/forum UI.
+
+### Fixed (custom form fields could not be saved)
+
+- **The admin bundle never registered `ticket-form-fields` in the store.** The settings page
+  called `app.store.find('ticket-form-fields')` and
+  `app.store.createRecord('ticket-form-fields')`, but only `tickets`, `ticket-categories`,
+  `support-departments` and `ticket-replies` were registered. The listing therefore resolved
+  to `null` entries and creating a field threw before any HTTP request was sent. The model is
+  now registered in `js/src/admin/extend.ts`; the list also treats a `null` entry as a load
+  error instead of showing an empty manager.
+- **The create endpoint returned HTTP 500 for administrators.** `TicketFormFieldResource`
+  authorized mutations with `->can(fn ($actor) => $actor->isAdmin())`. Flarum passes the
+  *model or context* to that closure, not the actor: create received `Flarum\Api\Context`
+  (`Call to undefined method …Context::isAdmin()`) and update/delete received the model.
+  All three endpoints now use Flarum's `->admin()` guard, which checks the request actor on
+  the server.
+- **`createdAt` / `updatedAt` were always `null`.** `TicketFormField` inherited Flarum's
+  default `$timestamps = false` while the table has timestamp columns. Timestamps are enabled
+  and existing rows are backfilled by the new migration.
+
+### Added / improved (admin form-field manager)
+
+- **Edit support.** Every row now has an Edit button. The form loads the current label, key,
+  type, choices, category, order and active/required switches, saves through `PATCH`, and
+  shows a translated “Field updated.” confirmation.
+- **Ordering.** The field form includes an explicit position input; the table shows the
+  current position and the list is sorted by it.
+- **Unique keys, enforced in three layers.** The browser warns before submitting a duplicate,
+  the API returns HTTP 422 with a readable message, and a new database unique index is the
+  final guard. Existing/legacy keys are normalised case-insensitively; blank keys are
+  generated from the label (Turkish-aware transliteration).
+- **Choice validation.** `select`, `radio` and `checkbox` fields require at least one option;
+  option lists are bounded to 200 entries of 255 characters. Clearing a category relationship
+  works through a direct JSON:API `PATCH` because `Model.save()` skips `null` relationships.
+- **Real error messages.** Failed saves show the server's `errors[].detail` instead of silently
+  doing nothing; the form stays open with the values intact.
+
+### Fixed (ticket form integration and validation)
+
+- **Required fields are now enforced server-side.** `TicketCustomFields::sanitize()` previously
+  dropped missing or invalid values silently. It now throws a `ValidationException`, producing
+  a 422 response that names the missing field. The check covers global *and* category-specific
+  fields, and only considers fields applicable to the selected category.
+- Invalid `select`/`radio`/`checkbox` choices, e-mails, URLs (http/https only), dates
+  (`YYYY-MM-DD`, real calendar dates), numbers (finite) and non-text values are rejected with
+  a readable message instead of being written to `tickets.custom_fields`.
+- Tickets can no longer be created in an inactive or non-existent category through a crafted
+  request; the frontend already hid those categories.
+- Checkbox answers are stored as arrays, numbers as numbers, and text is bounded to 5,000
+  characters. Unknown keys are still ignored.
+- Existing tickets are untouched: answers are only written on create, updates restore the
+  stored `custom_fields`, and deleting a field keeps its stored answers visible under the
+  original key.
+
+### Compatibility / tooling
+
+- Flarum 2.0.2, PHP 8.4 (extension requirement `^8.3`), SQLite used for the automated suite;
+  the SQL uses portable Laravel query-builder constructs for MySQL/MariaDB.
+- TypeScript type-check now passes (`tsc --noEmit`) and both production bundles were rebuilt
+  (`js/dist/admin.js`, `js/dist/forum.js`).
+- New migration `2026_10_30_000005_add_unique_name_to_ticket_form_fields.php` deduplicates
+  existing keys without deleting fields, preserves already-valid keys (including mixed case),
+  backfills timestamps and adds the unique index; it is safe to run on an existing install.
+- Verified with a 66-check API regression suite (CRUD, permissions, validation, persistence,
+  ticket creation/detail, deleted-field history) plus a real browser pass through the admin
+  create/edit forms and the forum New Ticket modal.
+
 ## 1.1.8 — 2026-10-16
 
 This release completes the departments feature begun in the 1.1.4–1.1.6 commits, brings

@@ -50,7 +50,7 @@ export default class TicketPage extends Page {
   load(id: any) {
     app.store
       .find('tickets', id, { include: 'replies,replies.user,category.department,assignee,user' })
-      .then((ticket) => {
+      .then((ticket: any) => {
         this.ticket = ticket;
         this.loading = false;
         app.setTitle(extractText(ticket.subject() || T('meta_title_text')));

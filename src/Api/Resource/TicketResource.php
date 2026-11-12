@@ -13,6 +13,7 @@ use Flarum\Api\Endpoint;
 use Flarum\Api\Resource\AbstractDatabaseResource;
 use Flarum\Api\Schema;
 use Flarum\Api\Sort\SortColumn;
+use Flarum\Foundation\Paths;
 use Flarum\Foundation\ValidationException;
 use Flarum\User\Exception\PermissionDeniedException;
 
@@ -20,6 +21,16 @@ class TicketResource extends AbstractDatabaseResource
 {
     private const ALLOWED_STATUSES = ['new', 'answered', 'pending', 'resolved', 'closed'];
     private const ALLOWED_PRIORITIES = ['low', 'medium', 'high', 'critical'];
+
+    /**
+     * Attachment filenames collected while deleting a ticket. They are removed
+     * from disk only after the database row has actually been deleted.
+     */
+    protected array $attachmentsToDelete = [];
+
+    public function __construct(protected Paths $paths)
+    {
+    }
 
     public function type(): string
     {
@@ -46,6 +57,7 @@ class TicketResource extends AbstractDatabaseResource
             Endpoint\Show::make()->authenticated(),
             Endpoint\Create::make()->authenticated(),
             Endpoint\Update::make()->authenticated(),
+            Endpoint\Delete::make()->authenticated()->can('delete'),
         ];
     }
 
@@ -196,5 +208,33 @@ class TicketResource extends AbstractDatabaseResource
         }
 
         return parent::updating($model, $context);
+    }
+
+    public function deleting(object $model, Context $context): void
+    {
+        /** @var Ticket $model */
+        $this->attachmentsToDelete = array_values(array_filter(array_merge(
+            [$model->attachment],
+            $model->replies()->pluck('attachment')->all()
+        )));
+
+        parent::deleting($model, $context);
+    }
+
+    public function deleted(object $model, Context $context): void
+    {
+        $directory = $this->paths->storage . '/support-tickets';
+
+        foreach ($this->attachmentsToDelete as $filename) {
+            // The filename is always server-generated; anything else is not
+            // ours to touch.
+            if (is_string($filename) && preg_match('/^[a-zA-Z0-9]{40}\.[a-z0-9]+$/', $filename)) {
+                @unlink($directory . '/' . $filename);
+            }
+        }
+
+        $this->attachmentsToDelete = [];
+
+        parent::deleted($model, $context);
     }
 }

@@ -797,6 +797,11 @@
   margin-top: 16px;
 }
 
+// Keep the destructive action away from the everyday status buttons.
+.TicketStaffActions-delete {
+  margin-left: auto;
+}
+
 // On a phone the action buttons used to be clipped by the panel padding. Let
 // them take the full width and wrap instead.
 @media @phone {
@@ -820,6 +825,10 @@
       justify-content: center;
       margin: 0;
     }
+  }
+
+  .TicketStaffActions-delete {
+    margin-left: 0;
   }
 }
 

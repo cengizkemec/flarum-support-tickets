@@ -1,5 +1,27 @@
 # Changelog
 
+## 1.1.11 - 2026-11-12
+
+Adds the missing staff delete action. The API reference already promised
+`DELETE /api/tickets/{id}` for `support.manage`, and the policy and database cascade were in
+place, but the resource did not expose the endpoint and the staff panel had no button.
+
+### Added
+
+- **Ticket deletion for staff.** The ticket staff panel now has a **Delete Ticket** button for
+  users with `support.manage`. It asks for confirmation, then removes the ticket and returns to
+  the support centre. The action is translated in English and Turkish.
+- `DELETE /api/tickets/{id}` on `TicketResource`, authorized by the existing `delete` policy
+  (`support.manage`). The resource scope still limits a manager without `support.viewAll` to
+  their own tickets.
+- Stored attachments belonging to the ticket and its replies are deleted from disk after the
+  database row is removed. Replies go with the ticket through the existing foreign-key cascade.
+
+### Fixed
+
+- Ticket deletion no longer has to rely on the daily orphan-attachment purge: a deliberate
+  ticket delete cleans its files immediately.
+
 ## 1.1.10 — 2026-10-30
 
 A focused bug-fix release for the HESK-style custom ticket form fields. The feature could be

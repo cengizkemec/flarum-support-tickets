@@ -98,6 +98,7 @@ export default class TicketPage extends Page {
     const ticket = this.ticket;
     const status = ticket.status();
     const isStaff = !!app.forum.attribute('canSupportViewAll') || !!app.forum.attribute('canSupportManage');
+    const canManage = !!app.forum.attribute('canSupportManage');
     const isClosed = status === 'closed';
     const canReply = (!isClosed || isStaff) && !!app.session.user;
 
@@ -125,7 +126,7 @@ export default class TicketPage extends Page {
 
         {canReply ? this.replyForm() : this.closedNote()}
 
-        {isStaff && this.staffPanel(ticket, status)}
+        {isStaff && this.staffPanel(ticket, status, canManage)}
       </PageStructure>
     );
   }
@@ -456,7 +457,7 @@ export default class TicketPage extends Page {
     m.redraw();
   }
 
-  staffPanel(ticket: any, status: string) {
+  staffPanel(ticket: any, status: string, canManage: boolean) {
     const staffList: any[] = (app.forum.attribute('supportStaff') as any[]) || [];
     const assigneeId = ticket.assignee() ? String(ticket.assignee().id()) : '';
     const isClosed = status === 'closed';
@@ -504,6 +505,12 @@ export default class TicketPage extends Page {
                 {T('close_ticket')}
               </Button>
             </div>
+          )}
+
+          {canManage && (
+            <Button className="Button Button--danger TicketStaffActions-delete" icon="fas fa-trash" onclick={() => this.deleteTicket()}>
+              {T('delete_ticket')}
+            </Button>
           )}
         </div>
       </div>
@@ -579,6 +586,18 @@ export default class TicketPage extends Page {
       m.redraw();
     } catch (e: any) {
       app.alerts.show({ type: 'error' }, e?.response?.errors?.[0]?.detail || e?.message || T('error_assign'));
+    }
+  }
+
+  async deleteTicket() {
+    if (!confirm(T('delete_confirm'))) return;
+
+    try {
+      await this.ticket.delete();
+      app.alerts.show({ type: 'success' }, T('deleted'));
+      m.route.set(app.route('support'));
+    } catch (e: any) {
+      app.alerts.show({ type: 'error' }, e?.response?.errors?.[0]?.detail || e?.message || T('error_delete'));
     }
   }
 }

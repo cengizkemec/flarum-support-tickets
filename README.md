@@ -1,6 +1,6 @@
 # Support Tickets for Flarum 2
 
-[![Latest Version](https://img.shields.io/badge/version-1.1.10-blue.svg)](https://github.com/cengizkemec/flarum-support-tickets/releases)
+[![Latest Version](https://img.shields.io/badge/version-1.1.11-blue.svg)](https://github.com/cengizkemec/flarum-support-tickets/releases)
 [![Flarum](https://img.shields.io/badge/flarum-%5E2.0-orange.svg)](https://flarum.org)
 [![PHP](https://img.shields.io/badge/php-%5E8.3-8892bf.svg)](https://www.php.net)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -69,6 +69,8 @@ Extension ID: `cengizkemec/support-tickets`
 - **Staff assignment** — assign a ticket to any staff member (permission-controlled), or let
   the extension auto-assign new tickets to the configured **support team group** — or, when the
   category has a department, to the department member with the fewest open tickets.
+- **Staff deletion** — users with `support.manage` can permanently delete a ticket from its
+  staff panel, with a confirmation prompt. Its replies and stored attachments are removed too.
 - **Readable ticket URLs** — tickets are linked as `/support/18/ses-ve-mikrofon-sorunu`
   (Turkish-aware slug), while the bare `/support/18` keeps working.
 - **Replies** — threaded conversation with protection against replies on closed tickets.
@@ -248,6 +250,9 @@ From then on the department drives the routing:
 3. Staff reply, change the priority, assign the ticket and move it through the statuses.
    Notifications follow the department when the category is linked to one.
 4. **Resolved** and **Closed** tickets reject replies from non-staff until reopened.
+5. Users with `support.manage` can delete a ticket from the staff panel. The confirmation
+   prompt is the last guard; the API checks the policy again, and the replies and attachments
+   are removed with the ticket.
 
 ---
 

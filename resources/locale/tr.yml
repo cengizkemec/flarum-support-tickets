@@ -172,6 +172,9 @@ cengizkemec-support:
     reopen: Yeniden Aç
     mark_resolved: Çözüldü Olarak İşaretle
     close_ticket: Kapat
+    delete_ticket: Bileti Sil
+    delete_confirm: "Bu bileti silmek istediğinizden emin misiniz? Tüm yanıtlar ve ekler kalıcı olarak silinecek."
+    deleted: Bilet silindi.
     closed_note: Bu bilet kapatıldı. Sohbete devam etmek için yeniden açın.
     unknown_user: Bilinmeyen kullanıcı
     empty_title: Henüz bilet yok
@@ -181,6 +184,7 @@ cengizkemec-support:
     error_reply: Yanıt gönderilemedi.
     error_status: Durum güncellenemedi.
     error_assign: Bilet atanamadı.
+    error_delete: Bilet silinemedi.
     error_create: Bilet oluşturulamadı.
     fields_load_error: Bilet formu tam olarak yüklenemedi. Lütfen sayfayı yenileyip tekrar deneyin.
     error_preferences: Bildirim tercihiniz kaydedilemedi.

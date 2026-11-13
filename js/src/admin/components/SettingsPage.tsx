@@ -114,6 +114,9 @@ export default class SettingsPage extends ExtensionPage {
   /** Id of the form field currently being saved/deleted. */
   busyFieldId: string | null = null;
 
+  /** True while the webhook test request is in flight. */
+  testingWebhook = false;
+
   oninit(vnode: any) {
     super.oninit(vnode);
     this.loadDepartments();
@@ -214,6 +217,34 @@ export default class SettingsPage extends ExtensionPage {
       {
         key: 'cengizkemec-support.auto_assign',
         label: app.translator.trans('cengizkemec-support.admin.auto_assign'),
+      },
+      {
+        key: 'cengizkemec-support.webhook_enabled',
+        label: app.translator.trans('cengizkemec-support.admin.webhooks.enabled'),
+      },
+      {
+        key: 'cengizkemec-support.webhook_urls',
+        label: app.translator.trans('cengizkemec-support.admin.webhooks.urls'),
+      },
+      {
+        key: 'cengizkemec-support.webhook_format',
+        label: app.translator.trans('cengizkemec-support.admin.webhooks.format'),
+      },
+      {
+        key: 'cengizkemec-support.webhook_new_ticket',
+        label: app.translator.trans('cengizkemec-support.admin.webhooks.new_ticket'),
+      },
+      {
+        key: 'cengizkemec-support.webhook_ticket_reply',
+        label: app.translator.trans('cengizkemec-support.admin.webhooks.ticket_reply'),
+      },
+      {
+        key: 'cengizkemec-support.webhook_include_content',
+        label: app.translator.trans('cengizkemec-support.admin.webhooks.include_content'),
+      },
+      {
+        key: 'cengizkemec-support.webhook_username',
+        label: app.translator.trans('cengizkemec-support.admin.webhooks.username'),
       },
     ];
   }
@@ -317,6 +348,81 @@ export default class SettingsPage extends ExtensionPage {
           label: app.translator.trans('cengizkemec-support.admin.auto_assign'),
           help: app.translator.trans('cengizkemec-support.admin.auto_assign_help'),
         })}
+
+        <h3 className="ExtensionPage-subHeader">
+          {app.translator.trans('cengizkemec-support.admin.webhooks.title')}
+        </h3>
+        <p className="helpText">{app.translator.trans('cengizkemec-support.admin.webhooks.help')}</p>
+
+        {this.buildSettingComponent({
+          setting: 'cengizkemec-support.webhook_enabled',
+          type: 'boolean',
+          label: app.translator.trans('cengizkemec-support.admin.webhooks.enabled'),
+          help: app.translator.trans('cengizkemec-support.admin.webhooks.enabled_help'),
+        })}
+
+        {this.buildSettingComponent({
+          setting: 'cengizkemec-support.webhook_urls',
+          type: 'textarea',
+          rows: 4,
+          placeholder: 'https://discord.com/api/webhooks/...',
+          label: app.translator.trans('cengizkemec-support.admin.webhooks.urls'),
+          help: app.translator.trans('cengizkemec-support.admin.webhooks.urls_help'),
+        })}
+
+        {this.buildSettingComponent({
+          setting: 'cengizkemec-support.webhook_format',
+          type: 'select',
+          label: app.translator.trans('cengizkemec-support.admin.webhooks.format'),
+          help: app.translator.trans('cengizkemec-support.admin.webhooks.format_help'),
+          options: {
+            discord: app.translator.trans('cengizkemec-support.admin.webhooks.format_discord'),
+            slack: app.translator.trans('cengizkemec-support.admin.webhooks.format_slack'),
+            teams: app.translator.trans('cengizkemec-support.admin.webhooks.format_teams'),
+            generic: app.translator.trans('cengizkemec-support.admin.webhooks.format_generic'),
+          },
+        })}
+
+        {this.buildSettingComponent({
+          setting: 'cengizkemec-support.webhook_new_ticket',
+          type: 'boolean',
+          label: app.translator.trans('cengizkemec-support.admin.webhooks.new_ticket'),
+          help: app.translator.trans('cengizkemec-support.admin.webhooks.new_ticket_help'),
+        })}
+
+        {this.buildSettingComponent({
+          setting: 'cengizkemec-support.webhook_ticket_reply',
+          type: 'boolean',
+          label: app.translator.trans('cengizkemec-support.admin.webhooks.ticket_reply'),
+          help: app.translator.trans('cengizkemec-support.admin.webhooks.ticket_reply_help'),
+        })}
+
+        {this.buildSettingComponent({
+          setting: 'cengizkemec-support.webhook_include_content',
+          type: 'boolean',
+          label: app.translator.trans('cengizkemec-support.admin.webhooks.include_content'),
+          help: app.translator.trans('cengizkemec-support.admin.webhooks.include_content_help'),
+        })}
+
+        {this.buildSettingComponent({
+          setting: 'cengizkemec-support.webhook_username',
+          type: 'text',
+          label: app.translator.trans('cengizkemec-support.admin.webhooks.username'),
+          help: app.translator.trans('cengizkemec-support.admin.webhooks.username_help'),
+        })}
+
+        <div className="Form-group">
+          <Button
+            className="Button"
+            icon="fas fa-paper-plane"
+            loading={this.testingWebhook}
+            disabled={this.testingWebhook}
+            onclick={() => this.testWebhook()}
+          >
+            {app.translator.trans('cengizkemec-support.admin.webhooks.test')}
+          </Button>
+          <p className="helpText">{app.translator.trans('cengizkemec-support.admin.webhooks.test_help')}</p>
+        </div>
 
         <div className="Form-group Form-controls">
           {this.submitButton()}
@@ -1497,6 +1603,71 @@ export default class SettingsPage extends ExtensionPage {
       (max, category) => Math.max(max, Number(category.attribute('position')) || 0),
       0
     ) + 1;
+  }
+
+  /**
+   * Send a test message to the URLs currently typed into the form, before the
+   * settings are saved.
+   */
+  async testWebhook() {
+    if (this.testingWebhook) return;
+
+    this.testingWebhook = true;
+    m.redraw();
+
+    try {
+      const response: any = await app.request({
+        method: 'POST',
+        url: app.forum.attribute('apiUrl') + '/support/webhook/test',
+        body: {
+          urls: String(this.setting('cengizkemec-support.webhook_urls')() ?? ''),
+          format: String(this.setting('cengizkemec-support.webhook_format')() ?? 'discord'),
+        },
+      });
+
+      const results = Array.isArray(response?.results) ? response.results : [];
+
+      if (!results.length) {
+        app.alerts.show(
+          { type: 'error' },
+          app.translator.trans('cengizkemec-support.admin.webhooks.test_no_urls')
+        );
+        return;
+      }
+
+      const failed = results.filter((result: any) => !result.ok);
+
+      if (!failed.length) {
+        app.alerts.show(
+          { type: 'success' },
+          app.translator.trans('cengizkemec-support.admin.webhooks.test_success', {
+            count: results.length,
+          })
+        );
+        return;
+      }
+
+      const detail = failed
+        .map((result: any) => {
+          const status = result.status ? `${result.status} ` : '';
+          return `${result.endpoint}: ${status}${result.error || ''}`.trim();
+        })
+        .join(' · ');
+
+      app.alerts.show(
+        { type: 'error' },
+        extractText(
+          app.translator.trans('cengizkemec-support.admin.webhooks.test_failure', {
+            count: failed.length,
+          })
+        ) + ` ${detail}`
+      );
+    } catch (e) {
+      this.showError(e, 'cengizkemec-support.admin.webhooks.test_failure_generic');
+    } finally {
+      this.testingWebhook = false;
+      m.redraw();
+    }
   }
 
   protected showError(error: any, fallbackKey: string) {

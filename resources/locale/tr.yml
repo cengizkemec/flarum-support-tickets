@@ -11,6 +11,33 @@ cengizkemec-support:
     staff_group_none: "— Yöneticiler ve “Tüm destek biletlerini gör” iznine sahip olanlar —"
     auto_assign: Yeni biletleri otomatik ata
     auto_assign_help: Her yeni bilet, en az açık bileti olan destek ekibi üyesine atanır.
+    webhooks:
+      title: Webhook'lar
+      help: "Yeni biletleri ve yanıtları Discord, Slack, Microsoft Teams veya herhangi bir webhook adresine gönderin. Webhook'lar forum bildirimlerinden ve e-postalardan bağımsız çalışır."
+      enabled: Webhook'ları etkinleştir
+      enabled_help: Etkinleştirildiğinde seçilen olaylar yapılandırılmış her webhook adresine gönderilir.
+      urls: Webhook adresleri
+      urls_help: "Her satıra bir adres. Belirli bir adres için biçimi seçmek üzere satırı discord|, slack|, teams| veya json| ile başlatın; aksi halde aşağıdaki varsayılan biçim kullanılır. # ile başlayan satırlar yok sayılır. En fazla 10 adres."
+      format: Varsayılan biçim
+      format_help: Biçim öneki olmayan adresler için kullanılır.
+      format_discord: Discord
+      format_slack: Slack / Mattermost / Rocket.Chat
+      format_teams: Microsoft Teams
+      format_generic: Genel JSON
+      new_ticket: Yeni biletler
+      new_ticket_help: Bir kullanıcı bilet açtığında mesaj gönder.
+      ticket_reply: Yeni yanıtlar
+      ticket_reply_help: Bir bilete yanıt yazıldığında mesaj gönder.
+      include_content: Mesaj içeriğini ekle
+      include_content_help: Bilet veya yanıt mesajından bir bölümü gönderime ekler. Yalnızca üst veri göndermek için kapatın.
+      username: Webhook kullanıcı adı
+      username_help: "Discord ve uyumlu adreslerde kullanılacak isteğe bağlı görünen ad. Boş bırakılırsa forum başlığı kullanılır."
+      test: Test mesajı gönder
+      test_help: Yukarıdaki adreslere, formdaki güncel değerlerle bir test mesajı gönderir. Ardından ayarları kaydedin.
+      test_success: "Test mesajı {count} adrese gönderildi."
+      test_failure: "{count} adreste test başarısız oldu."
+      test_failure_generic: Test mesajı gönderilemedi.
+      test_no_urls: Yapılandırılmış webhook adresi yok.
     permissions:
       view_all: Tüm destek biletlerini gör
       reply: Destek biletlerine yanıt ver
@@ -120,6 +147,25 @@ cengizkemec-support:
         select: Açılır liste
         radio: Radyo düğmeleri
         checkbox: Onay kutuları
+  webhook:
+    new_ticket_title: "Yeni destek bileti: {subject}"
+    reply_title: "Bilete yeni yanıt: {subject}"
+    staff_reply_title: "Destek ekibi yanıtladı: {subject}"
+    test_title: Destek Biletleri webhook testi
+    test_description: "Bu, {forum} forumundan gönderilen bir test mesajıdır. Bu mesajı görüyorsanız webhook çalışıyor."
+    view_ticket: Bileti görüntüle
+    fields:
+      category: Kategori
+      priority: Öncelik
+      status: Durum
+      opened_by: Açan
+      replied_by: Yanıtlayan
+      assigned_to: Atanan
+      department: Departman
+      staff_reply: Ekip yanıtı
+      yes: Evet
+      no: Hayır
+      none: "—"
   forum:
     nav_item: Destek
     title: Destek Merkezi

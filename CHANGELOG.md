@@ -1,5 +1,37 @@
 # Changelog
 
+## 1.2.0 - 2026-11-13
+
+Adds webhook notifications, so new tickets and replies can be posted to Discord and other
+services in addition to the existing in-forum alerts and e-mails.
+
+### Added
+
+- **Webhook settings** in `Admin → Extensions → Support Tickets`: master switch, one URL per
+  line, default format, per-event toggles (new tickets, new replies), optional message content
+  and an optional Discord username.
+- **Multiple endpoints per forum** (up to 10). A line may start with `discord|`, `slack|`,
+  `teams|` or `json|` to use a different format for that endpoint; otherwise the default format
+  applies. Lines starting with `#` are ignored.
+- **Four payload formats**: Discord embeds, Slack-compatible mrkdwn (also Mattermost and
+  Rocket.Chat), Microsoft Teams MessageCards, and a stable generic JSON document for custom
+  integrations.
+- **Send test message** button in the admin panel. It uses the current (possibly unsaved) form
+  values and reports per-endpoint success or failure, with URL secrets masked.
+- `POST /api/support/webhook/test` (administrator only) behind the test button.
+- New ticket and reply payloads include the ticket link, category, department, status,
+  priority, opener/replier, assignee and custom form-field answers.
+- English and Turkish translations for every new setting, help text and webhook label.
+
+### Security
+
+- Webhook URLs are only readable and editable by administrators.
+- The test response and logs mask the secret part of each URL.
+- Only `http`/`https` URLs are accepted, redirects are not followed, and requests use short
+  timeouts. Delivery failures never block ticket creation or replies.
+- Discord payloads set `allowed_mentions.parse = []`, so user-supplied subjects and messages
+  cannot mention `@everyone` or roles.
+
 ## 1.1.11 - 2026-11-12
 
 Adds the missing staff delete action. The API reference already promised

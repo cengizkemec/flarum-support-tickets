@@ -1,6 +1,6 @@
 # Support Tickets for Flarum 2
 
-[![Latest Version](https://img.shields.io/badge/version-1.1.11-blue.svg)](https://github.com/cengizkemec/flarum-support-tickets/releases)
+[![Latest Version](https://img.shields.io/badge/version-1.2.0-blue.svg)](https://github.com/cengizkemec/flarum-support-tickets/releases)
 [![Flarum](https://img.shields.io/badge/flarum-%5E2.0-orange.svg)](https://flarum.org)
 [![PHP](https://img.shields.io/badge/php-%5E8.3-8892bf.svg)](https://www.php.net)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -27,6 +27,7 @@ Extension ID: `cengizkemec/support-tickets`
 - [File attachments](#file-attachments)
 - [Scheduled maintenance](#scheduled-maintenance)
 - [Email notifications](#email-notifications)
+- [Webhooks](#webhooks)
 - [API reference](#api-reference)
 - [Security notes](#security-notes)
 - [Updating](#updating)
@@ -80,6 +81,11 @@ Extension ID: `cengizkemec/support-tickets`
   department's members only. Ticket notifications render with an icon, the sender, the action
   text and an excerpt of the ticket subject, and link straight to the ticket. Users can enable
   or disable each type.
+- **Webhooks** — send new tickets and replies to **Discord**, **Slack / Mattermost /
+  Rocket.Chat**, **Microsoft Teams** or any other JSON endpoint. Add one URL per line, override
+  the format per endpoint, choose which events to send, include or hide message content, and
+  verify the setup with a test message from the admin panel. Webhooks work independently of
+  in-forum alerts and e-mails.
 - **Guest-friendly support centre** — guests landing on `/support` get a clear invitation to
   sign in or register, and both buttons open the standard Flarum modals. "Support" stays
   visible in the sidebar for everyone.
@@ -153,6 +159,10 @@ Two forum attributes are exposed to the frontend so the UI can adapt:
 - **Support team group** — members of the selected group are the support team: they see every
   ticket, receive the notifications and can be auto-assigned new tickets. When nothing is
   selected, administrators and holders of `support.viewAll` are used.
+- **Webhooks** — enable webhook delivery, paste one URL per line, pick the default format,
+  choose whether new tickets and/or replies are sent, include or hide message excerpts, and
+  use **Send test message** to verify the configuration before saving. See
+  [Webhooks](#webhooks).
 
 All settings save through Flarum's standard settings endpoint.
 
@@ -312,6 +322,73 @@ created for the relevant parties.
 
 ---
 
+## Webhooks
+
+Webhooks post a notification to another service when a ticket event happens. They are
+configured in `Admin → Extensions → Support Tickets → Webhooks` and run independently of
+in-forum alerts and e-mails, so you can keep the forum quiet while sending everything to a
+staff channel.
+
+### Setup
+
+1. Enable **Webhooks**.
+2. Paste the endpoint URL(s) into **Webhook URLs**, one per line.
+3. Pick the default **format** (Discord, Slack / Mattermost / Rocket.Chat, Microsoft Teams or
+   generic JSON).
+4. Choose the events: **New tickets** and/or **New replies**.
+5. Click **Send test message** and check the channel. Save the settings afterwards.
+
+The test button uses the values currently in the form, so a URL can be verified before it is
+saved.
+
+### Endpoint formats
+
+| Format | Prefix | Works with |
+|--------|--------|------------|
+| Discord | `discord` | Discord webhooks (rich embeds) |
+| Slack | `slack` | Slack, Mattermost, Rocket.Chat and other Slack-compatible incoming webhooks |
+| Microsoft Teams | `teams` | Office 365 / Teams incoming webhooks (MessageCard) |
+| Generic JSON | `generic` or `json` | Any custom endpoint |
+
+The default format is used for URLs without a prefix. To mix services, add a prefix to each
+line:
+
+```
+https://discord.com/api/webhooks/...
+slack|https://hooks.slack.com/services/...
+teams|https://outlook.office.com/webhook/...
+json|https://example.com/support-hook
+```
+
+Lines starting with `#` are ignored. Up to 10 endpoints are supported.
+
+### Payload
+
+Every message includes the event (`ticket.created`, `ticket.replied` or `webhook.test`), a
+link to the ticket, category, department, status, priority, the opener/replier, the assignee
+and the ticket's custom fields. When **Include message content** is on, an excerpt of the
+ticket or reply is included too.
+
+Discord receives a rich embed; Slack receives mrkdwn; Teams receives a MessageCard; generic
+endpoints receive a stable JSON document with `event`, `title`, `description`, `url`,
+`timestamp`, `fields` and a `data` object containing the ticket and user/reply details. Every
+request carries an `X-Support-Ticket-Event` header.
+
+User content is never allowed to mention `@everyone` or roles on Discord (the payload sets
+`allowed_mentions.parse = []`), and delivery problems are written to the Flarum log without
+blocking ticket creation or replies.
+
+### Security
+
+- Webhook URLs are settings, so only administrators can read or change them.
+- The console log and the admin test response mask the secret part of every URL.
+- Only `http` and `https` URLs are accepted, redirects are not followed, and requests time out
+  after 8 seconds.
+- Webhook payloads contain ticket subjects, messages and usernames. Only point them at
+  services you trust.
+
+---
+
 ## API reference
 
 All endpoints are JSON:API resources under `/api` and require authentication where appropriate.
@@ -326,8 +403,9 @@ All endpoints are JSON:API resources under `/api` and require authentication whe
 | `GET` / `POST` / `PATCH` / `DELETE` | `/api/support-departments` | `support-departments` | Admin-only mutations. Fields: `name`, `slug` (unique), `description`, `userIds` (member ids, only serialised for administrators), `isActive`. |
 | `GET` / `POST` / `PATCH` / `DELETE` | `/api/ticket-form-fields` | `ticket-form-fields` | Admin-only mutations. Fields: `label`, `name` (unique, auto-generated when empty), `type`, `options` (array, for `select`/`radio`/`checkbox`), `isRequired`, `isActive`, `position`, `category` (nullable relationship). Sortable by `position`. |
 | `GET` / `POST` | `/api/ticket-replies` | `ticket-replies` | The `ticket` relationship is required on create. |
-| `POST` | `/api/support/upload` | — | Multipart file upload; returns the stored filename. |
-| `GET` | `/api/support/attachments/{filename}` | — | Authenticated download; 403/404 on failure. |
+| `POST` | `/api/support/upload` | - | Multipart file upload; returns the stored filename. |
+| `GET` | `/api/support/attachments/{filename}` | - | Authenticated download; 403/404 on failure. |
+| `POST` | `/api/support/webhook/test` | - | Admin only. Body: `urls` (newline-separated, optional) and `format` (optional). Sends a test message and returns per-endpoint results. |
 
 Tickets and replies carry a read-only `messageHtml` attribute: the stored plain text rendered
 by the same server-side s9e formatter posts use (lists, quotes, code, links), which is what the
@@ -360,6 +438,9 @@ forum displays.
   `userIds` of a department are filtered against the users table and only serialised for
   administrators.
 - Invalid status/priority values are rejected, and replies cannot spoof `isStaff`.
+- Webhook URLs and the webhook test endpoint are administrator-only. Test responses and log
+  lines mask the secret part of each URL, redirects are not followed, and Discord mentions are
+  explicitly disabled so ticket content cannot ping `@everyone` or roles.
 - Covered by an automated security regression suite (guest access, cross-user isolation,
   mass-assignment, `isStaff` spoofing, download headers, upload validation including
   double-extension and path-traversal payloads, and storage safety) — 33 checks, all passing.

@@ -2,6 +2,7 @@
 
 use Cengizkemec\SupportTickets\Access\TicketPolicy;
 use Cengizkemec\SupportTickets\Api\Controller\DownloadAttachmentController;
+use Cengizkemec\SupportTickets\Api\Controller\TestWebhookController;
 use Cengizkemec\SupportTickets\Api\Controller\UploadAttachmentController;
 use Cengizkemec\SupportTickets\Api\Resource\TicketCategoryResource;
 use Cengizkemec\SupportTickets\Api\Resource\SupportDepartmentResource;
@@ -11,6 +12,7 @@ use Cengizkemec\SupportTickets\Api\Resource\TicketResource;
 use Cengizkemec\SupportTickets\Console\AutoCloseTicketsCommand;
 use Cengizkemec\SupportTickets\Console\PurgeOrphanAttachmentsCommand;
 use Cengizkemec\SupportTickets\Listener\SendTicketNotifications;
+use Cengizkemec\SupportTickets\Listener\SendTicketWebhooks;
 use Cengizkemec\SupportTickets\Model\Ticket;
 use Cengizkemec\SupportTickets\Notification\NewTicketBlueprint;
 use Cengizkemec\SupportTickets\Notification\TicketReplyBlueprint;
@@ -41,7 +43,8 @@ return [
 
     (new Extend\Routes('api'))
         ->post('/support/upload', 'support.upload', UploadAttachmentController::class)
-        ->get('/support/attachments/{filename}', 'support.attachment.download', DownloadAttachmentController::class),
+        ->get('/support/attachments/{filename}', 'support.attachment.download', DownloadAttachmentController::class)
+        ->post('/support/webhook/test', 'support.webhook.test', TestWebhookController::class),
 
     new Extend\ApiResource(TicketResource::class),
     new Extend\ApiResource(TicketCategoryResource::class),
@@ -88,7 +91,8 @@ return [
         ->type(TicketReplyBlueprint::class, ['alert', 'email']),
 
     (new Extend\Event())
-        ->subscribe(SendTicketNotifications::class),
+        ->subscribe(SendTicketNotifications::class)
+        ->subscribe(SendTicketWebhooks::class),
 
     (new Extend\View())
         ->namespace('cengizkemec-support', __DIR__.'/resources/views'),
@@ -98,7 +102,14 @@ return [
         ->default('cengizkemec-support.auto_close_days', 14)
         ->default('cengizkemec-support.email_notifications', true)
         ->default('cengizkemec-support.staff_group_id', null)
-        ->default('cengizkemec-support.auto_assign', true),
+        ->default('cengizkemec-support.auto_assign', true)
+        ->default('cengizkemec-support.webhook_enabled', false)
+        ->default('cengizkemec-support.webhook_urls', '')
+        ->default('cengizkemec-support.webhook_format', 'discord')
+        ->default('cengizkemec-support.webhook_new_ticket', true)
+        ->default('cengizkemec-support.webhook_ticket_reply', true)
+        ->default('cengizkemec-support.webhook_include_content', true)
+        ->default('cengizkemec-support.webhook_username', ''),
 
     // Make FoF PWA open the ticket (rather than the board index) when a push
     // notification about a ticket is tapped. No-op when FoF PWA is absent.
